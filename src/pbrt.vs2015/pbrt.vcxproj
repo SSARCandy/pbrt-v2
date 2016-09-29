@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -20,6 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\main\pbrt.cpp" />
+    <ClCompile Include="..\shapes\heightfieldImproved.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\shapes\heightfieldimproved.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7C350267-019A-43D2-BA77-0B3DF4C94EB8}</ProjectGuid>

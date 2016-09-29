@@ -103,6 +103,7 @@
 #include "shapes/cylinder.h"
 #include "shapes/disk.h"
 #include "shapes/heightfield.h"
+#include "shapes/heightfieldImproved.h"
 #include "shapes/hyperboloid.h"
 #include "shapes/loopsubdiv.h"
 #include "shapes/nurbs.h"
@@ -343,6 +344,9 @@ Reference<Shape> MakeShape(const string &name,
                                     paramSet, &graphicsState.floatTextures);
     else if (name == "heightfield")
         s = CreateHeightfieldShape(object2world, world2object, reverseOrientation,
+                                   paramSet);
+    else if (name == "heightfieldImproved")
+        s = CreateHeightfieldImprovedShape(object2world, world2object, reverseOrientation,
                                    paramSet);
     else if (name == "loopsubdiv")
         s = CreateLoopSubdivShape(object2world, world2object, reverseOrientation,
