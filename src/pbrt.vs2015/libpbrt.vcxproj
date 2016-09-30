@@ -261,6 +261,7 @@
     <ClInclude Include="..\shapes\cylinder.h" />
     <ClInclude Include="..\shapes\disk.h" />
     <ClInclude Include="..\shapes\heightfield.h" />
+    <ClInclude Include="..\shapes\heightfieldimproved.h" />
     <ClInclude Include="..\shapes\hyperboloid.h" />
     <ClInclude Include="..\shapes\loopsubdiv.h" />
     <ClInclude Include="..\shapes\nurbs.h" />
@@ -1222,6 +1223,7 @@
     <ClCompile Include="..\shapes\cylinder.cpp" />
     <ClCompile Include="..\shapes\disk.cpp" />
     <ClCompile Include="..\shapes\heightfield.cpp" />
+    <ClCompile Include="..\shapes\heightfieldImproved.cpp" />
     <ClCompile Include="..\shapes\hyperboloid.cpp" />
     <ClCompile Include="..\shapes\loopsubdiv.cpp" />
     <ClCompile Include="..\shapes\nurbs.cpp" />

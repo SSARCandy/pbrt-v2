@@ -16,7 +16,6 @@ public:
     HeightfieldImproved(const Transform *o2, const Transform *w2o, bool ro, int nu, int nv, const float *zs);
     ~HeightfieldImproved();
     bool CanIntersect() const;
-    void Refine(vector<Reference<Shape> > &refined) const;
 	bool Intersect(const Ray & ray, float * tHit, float * rayEpsilon, DifferentialGeometry * dg) const;
 	bool IntersectP(const Ray & ray) const;
     BBox ObjectBound() const;
