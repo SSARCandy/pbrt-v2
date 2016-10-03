@@ -16,6 +16,11 @@ HeightfieldImproved::HeightfieldImproved(const Transform *o2w, const Transform *
     z = new float[nx*ny];
     memcpy(z, zs, nx*ny*sizeof(float));
 
+	nVoxels[0] = nx - 1;
+	nVoxels[1] = ny - 1;
+	nVoxels[2] = 1;
+
+	ComputeVertexNormal();
 }
 
 
@@ -33,15 +38,96 @@ BBox HeightfieldImproved::ObjectBound() const {
 	return BBox(Point(0, 0, minz), Point(1, 1, maxz));
 }
 
-bool HeightfieldImproved::VoxelIntersector(const Ray &ray, int i, int j, Intersection *in) const {
-	Point TL(voxelToPos(i, 0),     voxelToPos(j, 1),     getZ(i, j));
-	Point TR(voxelToPos(i + 1, 0), voxelToPos(j, 1),     getZ(i + 1, j));
-	Point BR(voxelToPos(i + 1, 0), voxelToPos(j + 1, 1), getZ(i + 1, j + 1));
-	Point BL(voxelToPos(i, 0),     voxelToPos(j + 1, 1), getZ(i, j + 1));
+bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit, float *rayEpsilon) const {
+	Point TL(voxelToPos(x, 0),     voxelToPos(y, 1),     getZ(x, y));
+	Point TR(voxelToPos(x + 1, 0), voxelToPos(y, 1),     getZ(x + 1, y));
+	Point BR(voxelToPos(x + 1, 0), voxelToPos(y + 1, 1), getZ(x + 1, y + 1));
+	Point BL(voxelToPos(x, 0),     voxelToPos(y + 1, 1), getZ(x, y + 1));
 
-	return false;
+	// ray should intersect with voxel
+	BBox bbox(Union(BBox(TL, TR), BBox(BR, BL)));
+	if (!bbox.IntersectP(r)) return false;
+
+	int vptr[6] = { 0,1,2,0,2,3 };
+	Point pts[4] = { TL,TR,BR,BL };
+	float uvs[8] = { TL.x, TL.y, TR.x, TR.y, BR.x, BR.y, BL.x, BL.y };
+
+#define INDEX(x,y) ((x)+(y)*nx)
+	Normal normals[4] = {
+		vertexNormals[INDEX(x,y)],
+		vertexNormals[INDEX(x+1,y)],
+		vertexNormals[INDEX(x+1,y+1)],
+		vertexNormals[INDEX(x,y+1)]
+	};
+#undef INDEX
+
+	// build-up two triangles
+	TriangleMesh *triMesh =
+		new TriangleMesh(ObjectToWorld, WorldToObject, ReverseOrientation, 2, 4, vptr, pts, normals, NULL, uvs, NULL);
+	Triangle *tri1 = new Triangle(ObjectToWorld, WorldToObject, ReverseOrientation, triMesh, 0);
+	Triangle *tri2 = new Triangle(ObjectToWorld, WorldToObject, ReverseOrientation, triMesh, 1);
+
+	// test intersection with each trangles, and get the intersection info.
+	Intersection i1, i2;
+	float tHit1, tHit2;
+	float rayEpsilon1, rayEpsilon2;
+	bool haveIntersect1 = tri1->Intersect(r, &tHit1, &rayEpsilon1, &(i1.dg));
+	bool haveIntersect2 = tri2->Intersect(r, &tHit2, &rayEpsilon2, &(i2.dg));
+
+	// no intersection with both triangles
+	if (!haveIntersect1 && !haveIntersect2) return false;
+
+	// both triangles intersect with ray, return the nearest(smaller tHit)
+	if (haveIntersect1 && haveIntersect2) {
+		if (tHit1 < tHit2) {
+			*in = i1;
+			*tHit = tHit1;
+			*rayEpsilon = rayEpsilon1;
+		} else {
+			*in = i2;
+			*tHit = tHit2;
+			*rayEpsilon = rayEpsilon2;
+		}
+		return true;
+	}
+
+	// only one of triangles have intersect with ray
+	if (haveIntersect1) {
+		*in = i1;
+		*tHit = tHit1;
+		*rayEpsilon = rayEpsilon1;
+	} else {
+		*in = i2;
+		*tHit = tHit2;
+		*rayEpsilon = rayEpsilon2;
+	}
+
+	return true;
 }
 
+void HeightfieldImproved::ComputeVertexNormal() {
+	vertexNormals = new Normal[ny*nx];
+
+	for (int y = 0; y < ny; y++) {
+		for (int x = 0; x < nx; x++) {
+			// each vertex have 6 neibors, {T, TL, L, B, BR, R}
+			Point T, TL, L, B, BR, R;
+			Point M(voxelToPos(x, 0), voxelToPos(y, 1), getZ(x, y)); // Middle point
+
+			// if the point doesn't exist, then equal to M
+			T  = OutOfBoundary(x,     y - 1) ? M : Point(voxelToPos(x,     0), voxelToPos(y,     1), getZ(x,     y - 1));
+			TL = OutOfBoundary(x - 1, y - 1) ? M : Point(voxelToPos(x - 1, 0), voxelToPos(y - 1, 1), getZ(x - 1, y - 1));
+			L  = OutOfBoundary(x - 1,     y) ? M : Point(voxelToPos(x - 1, 0), voxelToPos(y,     1), getZ(x - 1,     y));
+			B  = OutOfBoundary(x,     y + 1) ? M : Point(voxelToPos(x,     0), voxelToPos(y + 1, 1), getZ(x,     y + 1));
+			BR = OutOfBoundary(x + 1, y + 1) ? M : Point(voxelToPos(x + 1, 0), voxelToPos(y + 1, 1), getZ(x + 1, y + 1));
+			R  = OutOfBoundary(x + 1,     y) ? M : Point(voxelToPos(x + 1, 0), voxelToPos(y,     1), getZ(x + 1,     y));
+
+			// TODO: the true normal = average of all 6 normals
+			vertexNormals[y*ny + x] = Normal(Normalize(Cross(TL - M, T - M) + Vector(0, 0, 1))); // now point normal = (TL-M) X (T-M)
+		}
+	}
+
+}
 
 bool HeightfieldImproved::CanIntersect() const {
     return true;
@@ -59,8 +145,6 @@ HeightfieldImproved *CreateHeightfieldImprovedShape(const Transform *o2w, const 
 }
 
 bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon, DifferentialGeometry *dg) const {
-
-	return false;
 	// Transform _Ray_ to object space
 	Ray ray;
 	(*WorldToObject)(r, &ray);
@@ -100,11 +184,15 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 	}
 
 	// Walk ray through voxel grid
-	bool hitSomething = false;
 	Intersection intersection;
+	float _tHit, _rayEpsilon;
+	bool hitSomething = false;
 	for (;;) {
 		int i = Pos[0], j = Pos[1];
-		hitSomething = VoxelIntersector(ray, i, j, &intersection);
+		hitSomething = VoxelIntersector(r, i, j, &intersection, &_tHit, &_rayEpsilon);
+
+		// no overlapping voxels in heightfield
+		if (hitSomething) break;
 
 		// Advance to next voxel
 
@@ -125,11 +213,18 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 	if (!hitSomething) return false;
 
 	// fill-in the intersection properities
+	*tHit = _tHit;
+	*rayEpsilon = _rayEpsilon;
+	*dg = intersection.dg;
 
-
-	return false;
+	return true;
 }
 
 bool HeightfieldImproved::IntersectP(const Ray &r) const {
-	return false;
+	return true;
+}
+
+void HeightfieldImproved::GetShadingGeometry(const Transform &obj2world,
+	const DifferentialGeometry &dg,	DifferentialGeometry *dgShading) const {
+	dg.shape->GetShadingGeometry(obj2world, dg, dgShading);
 }

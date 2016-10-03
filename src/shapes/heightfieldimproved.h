@@ -19,7 +19,14 @@ public:
 	bool Intersect(const Ray &r, float *tHit, float *rayEpsilon, DifferentialGeometry *dg) const;
 	bool IntersectP(const Ray &r) const;
     BBox ObjectBound() const;
+	void GetShadingGeometry(const Transform &obj2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
+
 private:
+	bool VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit, float *rayEpsilon) const;
+	void ComputeVertexNormal();
+	inline bool OutOfBoundary(int x, int y) {
+		return x < 0 || y < 0 || x >= nx || y >= ny;
+	}
 	inline int posToVoxel(const Point &P, int axis) const {
 		if (axis == 2) return 0;
 		int v = Float2Int(P[axis] * nVoxels[axis]);
@@ -31,12 +38,12 @@ private:
 	inline float getZ(int x, int y) const {
 		return z[y*nx + x];
 	}
-	bool VoxelIntersector(const Ray &ray, int i, int j, Intersection *in) const;
 
     // heightfieldImproved Private Data
     float *z;
     int nx, ny;
 	int nVoxels[3]; // [nx-1, ny-1, 1]
+	Normal *vertexNormals;
 };
 
 
