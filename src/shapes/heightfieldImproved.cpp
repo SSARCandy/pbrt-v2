@@ -46,7 +46,7 @@ bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersect
 
 	// ray should intersect with voxel
 	BBox bbox(Union(BBox(TL, TR), BBox(BR, BL)));
-	if (!bbox.IntersectP(r)) return false;
+	if (!bbox.IntersectP((*WorldToObject)(r))) return false;
 
 	int vptr[6] = { 0,1,2,0,2,3 };
 	Point pts[4] = { TL,TR,BR,BL };
@@ -221,7 +221,7 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 }
 
 bool HeightfieldImproved::IntersectP(const Ray &r) const {
-	return true;
+	return false;
 }
 
 void HeightfieldImproved::GetShadingGeometry(const Transform &obj2world,
