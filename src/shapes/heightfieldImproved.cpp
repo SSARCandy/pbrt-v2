@@ -1,6 +1,7 @@
 
 // shapes/heightfieldImproved.cpp*
 
+#include "../vdb.h"
 #include "stdafx.h"
 #include "shapes/heightfieldImproved.h"
 #include "shapes/trianglemesh.h"
@@ -21,6 +22,7 @@ HeightfieldImproved::HeightfieldImproved(const Transform *o2w, const Transform *
 	nVoxels[2] = 1;
 
 	ComputeVertexNormal();
+	//vdb_line(0, 0, 0, 1, 1, 1);
 }
 
 
@@ -38,7 +40,7 @@ BBox HeightfieldImproved::ObjectBound() const {
 	return BBox(Point(0, 0, minz), Point(1, 1, maxz));
 }
 
-bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit, float *rayEpsilon) const {
+bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit) const {
 	Point TL(voxelToPos(x, 0),     voxelToPos(y, 1),     getZ(x, y));
 	Point TR(voxelToPos(x + 1, 0), voxelToPos(y, 1),     getZ(x + 1, y));
 	Point BR(voxelToPos(x + 1, 0), voxelToPos(y + 1, 1), getZ(x + 1, y + 1));
@@ -63,16 +65,15 @@ bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersect
 
 	// build-up two triangles
 	TriangleMesh *triMesh =
-		new TriangleMesh(ObjectToWorld, WorldToObject, ReverseOrientation, 2, 4, vptr, pts, normals, NULL, uvs, NULL);
+		new TriangleMesh(ObjectToWorld, WorldToObject, ReverseOrientation, 2, 4, vptr, pts, NULL, NULL, uvs, NULL);
 	Triangle *tri1 = new Triangle(ObjectToWorld, WorldToObject, ReverseOrientation, triMesh, 0);
 	Triangle *tri2 = new Triangle(ObjectToWorld, WorldToObject, ReverseOrientation, triMesh, 1);
 
 	// test intersection with each trangles, and get the intersection info.
 	Intersection i1, i2;
 	float tHit1, tHit2;
-	float rayEpsilon1, rayEpsilon2;
-	bool haveIntersect1 = tri1->Intersect(r, &tHit1, &rayEpsilon1, &(i1.dg));
-	bool haveIntersect2 = tri2->Intersect(r, &tHit2, &rayEpsilon2, &(i2.dg));
+	bool haveIntersect1 = tri1->Intersect(r, &tHit1, &(i1.rayEpsilon), &(i1.dg));
+	bool haveIntersect2 = tri2->Intersect(r, &tHit2, &(i2.rayEpsilon), &(i2.dg));
 
 	// no intersection with both triangles
 	if (!haveIntersect1 && !haveIntersect2) return false;
@@ -82,11 +83,9 @@ bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersect
 		if (tHit1 < tHit2) {
 			*in = i1;
 			*tHit = tHit1;
-			*rayEpsilon = rayEpsilon1;
 		} else {
 			*in = i2;
 			*tHit = tHit2;
-			*rayEpsilon = rayEpsilon2;
 		}
 		return true;
 	}
@@ -95,11 +94,9 @@ bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersect
 	if (haveIntersect1) {
 		*in = i1;
 		*tHit = tHit1;
-		*rayEpsilon = rayEpsilon1;
 	} else {
 		*in = i2;
 		*tHit = tHit2;
-		*rayEpsilon = rayEpsilon2;
 	}
 
 	return true;
@@ -110,7 +107,7 @@ void HeightfieldImproved::ComputeVertexNormal() {
 
 	for (int y = 0; y < ny; y++) {
 		for (int x = 0; x < nx; x++) {
-			// each vertex have 6 neibors, {T, TL, L, B, BR, R}
+			// each vertex have 6 neighbors, {T, TL, L, B, BR, R}
 			Point T, TL, L, B, BR, R;
 			Point M(voxelToPos(x, 0), voxelToPos(y, 1), getZ(x, y)); // Middle point
 
@@ -185,11 +182,11 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 
 	// Walk ray through voxel grid
 	Intersection intersection;
-	float _tHit, _rayEpsilon;
+	float _tHit;
 	bool hitSomething = false;
 	for (;;) {
 		int i = Pos[0], j = Pos[1];
-		hitSomething = VoxelIntersector(r, i, j, &intersection, &_tHit, &_rayEpsilon);
+		hitSomething = VoxelIntersector(r, i, j, &intersection, &_tHit);
 
 		// no overlapping voxels in heightfield
 		if (hitSomething) break;
@@ -214,17 +211,18 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 
 	// fill-in the intersection properities
 	*tHit = _tHit;
-	*rayEpsilon = _rayEpsilon;
+	*rayEpsilon = intersection.rayEpsilon;
 	*dg = intersection.dg;
 
+	
 	return true;
 }
 
 bool HeightfieldImproved::IntersectP(const Ray &r) const {
 	return false;
 }
-
-void HeightfieldImproved::GetShadingGeometry(const Transform &obj2world,
-	const DifferentialGeometry &dg,	DifferentialGeometry *dgShading) const {
-	dg.shape->GetShadingGeometry(obj2world, dg, dgShading);
-}
+//
+//void HeightfieldImproved::GetShadingGeometry(const Transform &obj2world,
+//	const DifferentialGeometry &dg,	DifferentialGeometry *dgShading) const {
+//	dg.shape->GetShadingGeometry(obj2world, dg, dgShading);
+//}

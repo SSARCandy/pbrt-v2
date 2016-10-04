@@ -19,10 +19,10 @@ public:
 	bool Intersect(const Ray &r, float *tHit, float *rayEpsilon, DifferentialGeometry *dg) const;
 	bool IntersectP(const Ray &r) const;
     BBox ObjectBound() const;
-	void GetShadingGeometry(const Transform &obj2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
+	//void GetShadingGeometry(const Transform &obj2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
 private:
-	bool VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit, float *rayEpsilon) const;
+	bool VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit) const;
 	void ComputeVertexNormal();
 	inline bool OutOfBoundary(int x, int y) {
 		return x < 0 || y < 0 || x >= nx || y >= ny;
