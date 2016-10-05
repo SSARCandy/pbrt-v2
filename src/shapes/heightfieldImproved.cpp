@@ -1,12 +1,16 @@
+#define VDB 0
 
 // shapes/heightfieldImproved.cpp*
 
 #include "stdafx.h"
+#if (VDB)
 #include "vdb.h"
+#endif
 #include "shapes/heightfieldImproved.h"
 #include "shapes/trianglemesh.h"
 #include "paramset.h"
 //#include "core/primitive.h"
+
 
 // heightfieldImproved Method Definitions
 HeightfieldImproved::HeightfieldImproved(const Transform *o2w, const Transform *w2o,
@@ -22,14 +26,13 @@ HeightfieldImproved::HeightfieldImproved(const Transform *o2w, const Transform *
 	nVoxels[2] = 1;
 
 	ComputeVertexNormal();
-	vdb_line(0, 0, 0, 1, 1, 1);
-}
+	DebugerDrawHeightField(true);
 
+}
 
 HeightfieldImproved::~HeightfieldImproved() {
     delete[] z;
 }
-
 
 BBox HeightfieldImproved::ObjectBound() const {
     float minz = z[0], maxz = z[0];
@@ -53,6 +56,9 @@ bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersect
 	int vptr[6] = { 0,1,2,0,2,3 };
 	Point pts[4] = { TL,TR,BR,BL };
 	float uvs[8] = { TL.x, TL.y, TR.x, TR.y, BR.x, BR.y, BL.x, BL.y };
+
+	DebugerDrawTriangle(TL, TR, BR, true);
+	DebugerDrawTriangle(TL, BR, BL, true);
 
 #define INDEX(x,y) ((x)+(y)*nx)
 	Normal normals[4] = {
@@ -157,7 +163,7 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 
 	// move t (unit) from ray.o
 	Point gridIntersect = ray(rayT);
-
+	//DebugerDrawPoint(gridIntersect, 0, 0, 1, true);
 
 	// Set up 3D DDA for ray
 	float NextCrossingT[3], DeltaT[3];
@@ -214,6 +220,9 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 	*rayEpsilon = intersection.rayEpsilon;
 	*dg = intersection.dg;
 
+	Point pp = ray(_tHit);
+	DebugerDrawPoint(pp, 1, 0, 0, true);
+	//DebugerDrawPoint(intersection.dg.p, 0, 1, 0, false);
 	
 	return true;
 }
@@ -226,3 +235,69 @@ bool HeightfieldImproved::IntersectP(const Ray &r) const {
 //	const DifferentialGeometry &dg,	DifferentialGeometry *dgShading) const {
 //	dg.shape->GetShadingGeometry(obj2world, dg, dgShading);
 //}
+
+/**
+ * Debug using vdb
+ */
+void HeightfieldImproved::DebugerDrawHeightField(bool inWorldSpace) const {
+#if (VDB)
+	for (int j = 0; j < ny - 1; j++) {
+		for (int i = 0; i < nx - 1; i++) {
+			Point TL(voxelToPos(i, 0), voxelToPos(j, 1), getZ(i, j));
+			Point TR(voxelToPos(i + 1, 0), voxelToPos(j, 1), getZ(i + 1, j));
+			Point BR(voxelToPos(i + 1, 0), voxelToPos(j + 1, 1), getZ(i + 1, j + 1));
+			Point BL(voxelToPos(i, 0), voxelToPos(j + 1, 1), getZ(i, j + 1));
+
+			if (inWorldSpace) {
+				TL = (*ObjectToWorld)(TL);
+				TR = (*ObjectToWorld)(TR);
+				BL = (*ObjectToWorld)(BL);
+				BR = (*ObjectToWorld)(BR);
+			}
+
+			vdb_line(TL.x, TL.y, TL.z, TR.x, TR.y, TR.z);
+			vdb_line(TR.x, TR.y, TR.z, BR.x, BR.y, BR.z);
+			vdb_line(BR.x, BR.y, BR.z, BL.x, BL.y, BL.z);
+			vdb_line(BL.x, BL.y, BL.z, TL.x, TL.y, TL.z);
+		}
+	}
+#endif
+
+}
+
+void HeightfieldImproved::DebugerDrawPoint(Point pt, float r, float g, float b, bool inWorldSpace) const {
+#if (VDB)
+	if (inWorldSpace) {
+		pt = (*ObjectToWorld)(pt);
+	}
+	vdb_color(r, g, b);
+	vdb_point(pt.x, pt.y, pt.z);
+	vdb_color(1, 1, 1);
+#endif
+}
+
+void HeightfieldImproved::DebugerDrawTriangle(Point pt1, Point pt2, Point pt3, bool inWorldSpace) const {
+#if (VDB)
+	if (inWorldSpace) {
+		pt1 = (*ObjectToWorld)(pt1);
+		pt2 = (*ObjectToWorld)(pt2);
+		pt3 = (*ObjectToWorld)(pt3);
+	}
+
+	vdb_line(pt1.x, pt1.y, pt1.z, pt2.x, pt2.y, pt2.z);
+	vdb_line(pt2.x, pt2.y, pt2.z, pt3.x, pt3.y, pt3.z);
+	vdb_line(pt3.x, pt3.y, pt3.z, pt1.x, pt1.y, pt1.z);
+#endif
+}
+
+void HeightfieldImproved::DebugerDrawLine(Point pt1, Point pt2, bool inWorldSpace) const {
+#if (VDB)
+	if (inWorldSpace) {
+		pt1 = (*ObjectToWorld)(pt1);
+		pt2 = (*ObjectToWorld)(pt2);
+	}
+	vdb_color(0, 1, 0);
+	vdb_line(pt1.x, pt1.y, pt1.z, pt2.x, pt2.y, pt2.z);
+	vdb_color(1,1,1);
+#endif
+}

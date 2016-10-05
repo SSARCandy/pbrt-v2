@@ -22,6 +22,12 @@ public:
 	//void GetShadingGeometry(const Transform &obj2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
 private:
+	void DebugerDrawHeightField(bool inWorldSpace) const;
+	void DebugerDrawPoint(Point pt, float r, float g, float b, bool inWorldSpace) const;
+	void DebugerDrawTriangle(Point pt1, Point pt2, Point pt3, bool inWorldSpace) const;
+	void DebugerDrawLine(Point pt1, Point pt2, bool inWorldSpace) const;
+
+
 	bool VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit) const;
 	void ComputeVertexNormal();
 	inline bool OutOfBoundary(int x, int y) {
