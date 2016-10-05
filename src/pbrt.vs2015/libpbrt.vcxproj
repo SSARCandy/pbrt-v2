@@ -280,6 +280,7 @@
     <ClInclude Include="..\textures\uv.h" />
     <ClInclude Include="..\textures\windy.h" />
     <ClInclude Include="..\textures\wrinkled.h" />
+    <ClInclude Include="..\vdb.h" />
     <ClInclude Include="..\volumes\exponential.h" />
     <ClInclude Include="..\volumes\homogeneous.h" />
     <ClInclude Include="..\volumes\volumegrid.h" />
@@ -1255,6 +1256,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>libpbrt</RootNamespace>
     <ProjectName>libpbrt</ProjectName>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

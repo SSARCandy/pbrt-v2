@@ -1,8 +1,8 @@
 
 // shapes/heightfieldImproved.cpp*
 
-#include "../vdb.h"
 #include "stdafx.h"
+#include "vdb.h"
 #include "shapes/heightfieldImproved.h"
 #include "shapes/trianglemesh.h"
 #include "paramset.h"
@@ -22,7 +22,7 @@ HeightfieldImproved::HeightfieldImproved(const Transform *o2w, const Transform *
 	nVoxels[2] = 1;
 
 	ComputeVertexNormal();
-	//vdb_line(0, 0, 0, 1, 1, 1);
+	vdb_line(0, 0, 0, 1, 1, 1);
 }
 
 
