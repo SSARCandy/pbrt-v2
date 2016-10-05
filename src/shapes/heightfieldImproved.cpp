@@ -174,13 +174,13 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 		if (ray.d[axis] >= 0) {
 			// Handle ray with positive direction for voxel stepping
 			NextCrossingT[axis] = rayT + (voxelToPos(Pos[axis] + 1, axis) - gridIntersect[axis]) / ray.d[axis];
-			DeltaT[axis] = 1.0 / ray.d[axis];
+			DeltaT[axis] = 1.0 / (nVoxels[axis] * ray.d[axis]);
 			Step[axis] = 1;
 			Out[axis] = nVoxels[axis];
 		} else {
 			// Handle ray with negative direction for voxel stepping
 			NextCrossingT[axis] = rayT + (voxelToPos(Pos[axis], axis) - gridIntersect[axis]) / ray.d[axis];
-			DeltaT[axis] = -1.0 / ray.d[axis];
+			DeltaT[axis] = -1.0 / (nVoxels[axis] * ray.d[axis]);
 			Step[axis] = -1;
 			Out[axis] = -1;
 		}
