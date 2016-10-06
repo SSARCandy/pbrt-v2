@@ -19,7 +19,7 @@ public:
 	bool Intersect(const Ray &r, float *tHit, float *rayEpsilon, DifferentialGeometry *dg) const;
 	bool IntersectP(const Ray &r) const;
     BBox ObjectBound() const;
-	//void GetShadingGeometry(const Transform &obj2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
+	void GetShadingGeometry(const Transform &obj2world, const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const;
 
 private:
 	void DebugerDrawHeightField(bool inWorldSpace) const;

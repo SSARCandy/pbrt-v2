@@ -1,11 +1,7 @@
-#define VDB 0
-
 // shapes/heightfieldImproved.cpp*
 
 #include "stdafx.h"
-#if (VDB)
 #include "vdb.h"
-#endif
 #include "shapes/heightfieldImproved.h"
 #include "shapes/trianglemesh.h"
 #include "paramset.h"
@@ -71,7 +67,7 @@ bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersect
 
 	// build-up two triangles
 	TriangleMesh *triMesh =
-		new TriangleMesh(ObjectToWorld, WorldToObject, ReverseOrientation, 2, 4, vptr, pts, NULL, NULL, uvs, NULL);
+		new TriangleMesh(ObjectToWorld, WorldToObject, ReverseOrientation, 2, 4, vptr, pts, normals, NULL, uvs, NULL);
 	Triangle *tri1 = new Triangle(ObjectToWorld, WorldToObject, ReverseOrientation, triMesh, 0);
 	Triangle *tri2 = new Triangle(ObjectToWorld, WorldToObject, ReverseOrientation, triMesh, 1);
 
@@ -118,15 +114,20 @@ void HeightfieldImproved::ComputeVertexNormal() {
 			Point M(voxelToPos(x, 0), voxelToPos(y, 1), getZ(x, y)); // Middle point
 
 			// if the point doesn't exist, then equal to M
-			T  = OutOfBoundary(x,     y - 1) ? M : Point(voxelToPos(x,     0), voxelToPos(y,     1), getZ(x,     y - 1));
+			T  = OutOfBoundary(x,     y - 1) ? M : Point(voxelToPos(x,     0), voxelToPos(y - 1, 1), getZ(x,     y - 1));
 			TL = OutOfBoundary(x - 1, y - 1) ? M : Point(voxelToPos(x - 1, 0), voxelToPos(y - 1, 1), getZ(x - 1, y - 1));
 			L  = OutOfBoundary(x - 1,     y) ? M : Point(voxelToPos(x - 1, 0), voxelToPos(y,     1), getZ(x - 1,     y));
 			B  = OutOfBoundary(x,     y + 1) ? M : Point(voxelToPos(x,     0), voxelToPos(y + 1, 1), getZ(x,     y + 1));
 			BR = OutOfBoundary(x + 1, y + 1) ? M : Point(voxelToPos(x + 1, 0), voxelToPos(y + 1, 1), getZ(x + 1, y + 1));
 			R  = OutOfBoundary(x + 1,     y) ? M : Point(voxelToPos(x + 1, 0), voxelToPos(y,     1), getZ(x + 1,     y));
 
-			// TODO: the true normal = average of all 6 normals
-			vertexNormals[y*ny + x] = Normal(Normalize(Cross(TL - M, T - M) + Vector(0, 0, 1))); // now point normal = (TL-M) X (T-M)
+#define X(p1,p2) Cross((p1-M),(p2-M))
+			// the true normal = average of all 6 normals
+			Vector aggerateNormal = X(TL, T) + X(T, L) + X(L, B) + X(B, BR) + X(BR, R) + X(R, T);
+#undef X
+
+			vertexNormals[y*ny + x] = Normal(Normalize(aggerateNormal));
+			DebugerDrawLine(M, M + Normalize(aggerateNormal)/5, true);
 		}
 	}
 
@@ -221,7 +222,7 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 	*dg = intersection.dg;
 
 	Point pp = ray(_tHit);
-	DebugerDrawPoint(pp, 1, 0, 0, true);
+	//DebugerDrawPoint(pp, 1, 0, 0, true);
 	//DebugerDrawPoint(intersection.dg.p, 0, 1, 0, false);
 	
 	return true;
@@ -230,17 +231,16 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 bool HeightfieldImproved::IntersectP(const Ray &r) const {
 	return false;
 }
-//
-//void HeightfieldImproved::GetShadingGeometry(const Transform &obj2world,
-//	const DifferentialGeometry &dg,	DifferentialGeometry *dgShading) const {
-//	dg.shape->GetShadingGeometry(obj2world, dg, dgShading);
-//}
+
+void HeightfieldImproved::GetShadingGeometry(const Transform &obj2world,
+	const DifferentialGeometry &dg,	DifferentialGeometry *dgShading) const {
+	dg.shape->GetShadingGeometry(obj2world, dg, dgShading);
+}
 
 /**
  * Debug using vdb
  */
 void HeightfieldImproved::DebugerDrawHeightField(bool inWorldSpace) const {
-#if (VDB)
 	for (int j = 0; j < ny - 1; j++) {
 		for (int i = 0; i < nx - 1; i++) {
 			Point TL(voxelToPos(i, 0), voxelToPos(j, 1), getZ(i, j));
@@ -261,23 +261,18 @@ void HeightfieldImproved::DebugerDrawHeightField(bool inWorldSpace) const {
 			vdb_line(BL.x, BL.y, BL.z, TL.x, TL.y, TL.z);
 		}
 	}
-#endif
-
 }
 
 void HeightfieldImproved::DebugerDrawPoint(Point pt, float r, float g, float b, bool inWorldSpace) const {
-#if (VDB)
 	if (inWorldSpace) {
 		pt = (*ObjectToWorld)(pt);
 	}
 	vdb_color(r, g, b);
 	vdb_point(pt.x, pt.y, pt.z);
 	vdb_color(1, 1, 1);
-#endif
 }
 
 void HeightfieldImproved::DebugerDrawTriangle(Point pt1, Point pt2, Point pt3, bool inWorldSpace) const {
-#if (VDB)
 	if (inWorldSpace) {
 		pt1 = (*ObjectToWorld)(pt1);
 		pt2 = (*ObjectToWorld)(pt2);
@@ -287,11 +282,9 @@ void HeightfieldImproved::DebugerDrawTriangle(Point pt1, Point pt2, Point pt3, b
 	vdb_line(pt1.x, pt1.y, pt1.z, pt2.x, pt2.y, pt2.z);
 	vdb_line(pt2.x, pt2.y, pt2.z, pt3.x, pt3.y, pt3.z);
 	vdb_line(pt3.x, pt3.y, pt3.z, pt1.x, pt1.y, pt1.z);
-#endif
 }
 
 void HeightfieldImproved::DebugerDrawLine(Point pt1, Point pt2, bool inWorldSpace) const {
-#if (VDB)
 	if (inWorldSpace) {
 		pt1 = (*ObjectToWorld)(pt1);
 		pt2 = (*ObjectToWorld)(pt2);
@@ -299,5 +292,4 @@ void HeightfieldImproved::DebugerDrawLine(Point pt1, Point pt2, bool inWorldSpac
 	vdb_color(0, 1, 0);
 	vdb_line(pt1.x, pt1.y, pt1.z, pt2.x, pt2.y, pt2.z);
 	vdb_color(1,1,1);
-#endif
 }
