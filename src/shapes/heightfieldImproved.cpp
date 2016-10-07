@@ -54,8 +54,10 @@ bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersect
 		if (pts[i].z > zMax) zMax = pts[i].z;
 	}
 
-	BBox bbox(Point(TL.x, TL.y, zMin), Point(BR.x, BR.y, zMax));
-	if (!bbox.IntersectP((*WorldToObject)(r))) return false;
+	BBox bbox;
+	bbox.pMin = Point(TL.x, TL.y, zMin);
+	bbox.pMax = Point(BR.x, BR.y, zMax);
+	if (!bbox.IntersectP(r)) return false;
 
 	int vptr[6] = { 0,1,2,0,2,3 };
 	float uvs[8] = { TL.x, TL.y, TR.x, TR.y, BR.x, BR.y, BL.x, BL.y };
@@ -79,10 +81,12 @@ bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersect
 	Triangle *tri2 = new Triangle(ObjectToWorld, WorldToObject, ReverseOrientation, triMesh, 1);
 
 	// test intersection with each trangles, and get the intersection info.
+	Ray ray;
 	Intersection i1, i2;
 	float tHit1, tHit2;
-	bool haveIntersect1 = tri1->Intersect(r, &tHit1, &(i1.rayEpsilon), &(i1.dg));
-	bool haveIntersect2 = tri2->Intersect(r, &tHit2, &(i2.rayEpsilon), &(i2.dg));
+	(*ObjectToWorld)(r, &ray);
+	bool haveIntersect1 = tri1->Intersect(ray, &tHit1, &(i1.rayEpsilon), &(i1.dg));
+	bool haveIntersect2 = tri2->Intersect(ray, &tHit2, &(i2.rayEpsilon), &(i2.dg));
 
 	// no intersection with both triangles
 	if (!haveIntersect1 && !haveIntersect2) return false;
@@ -200,7 +204,7 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 	bool hitSomething = false;
 	for (;;) {
 		int i = Pos[0], j = Pos[1];
-		hitSomething = VoxelIntersector(r, i, j, &intersection, &_tHit);
+		hitSomething = VoxelIntersector(ray, i, j, &intersection, &_tHit);
 
 		// no overlapping voxels in heightfield
 		if (hitSomething) break;
