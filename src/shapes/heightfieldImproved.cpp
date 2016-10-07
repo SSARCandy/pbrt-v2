@@ -17,6 +17,12 @@ HeightfieldImproved::HeightfieldImproved(const Transform *o2w, const Transform *
     z = new float[nx*ny];
     memcpy(z, zs, nx*ny*sizeof(float));
 
+	minz = z[0], maxz = z[0];
+	for (int i = 1; i < nx*ny; ++i) {
+		if (z[i] < minz) minz = z[i];
+		if (z[i] > maxz) maxz = z[i];
+	}
+
 	nVoxels[0] = nx - 1;
 	nVoxels[1] = ny - 1;
 	nVoxels[2] = 1;
@@ -31,11 +37,6 @@ HeightfieldImproved::~HeightfieldImproved() {
 }
 
 BBox HeightfieldImproved::ObjectBound() const {
-    float minz = z[0], maxz = z[0];
-    for (int i = 1; i < nx*ny; ++i) {
-        if (z[i] < minz) minz = z[i];
-        if (z[i] > maxz) maxz = z[i];
-    }
 	return BBox(Point(0, 0, minz), Point(1, 1, maxz));
 }
 
@@ -44,13 +45,19 @@ bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersect
 	Point TR(voxelToPos(x + 1, 0), voxelToPos(y, 1),     getZ(x + 1, y));
 	Point BR(voxelToPos(x + 1, 0), voxelToPos(y + 1, 1), getZ(x + 1, y + 1));
 	Point BL(voxelToPos(x, 0),     voxelToPos(y + 1, 1), getZ(x, y + 1));
+	Point pts[4] = { TL,TR,BR,BL };
 
 	// ray should intersect with voxel
-	BBox bbox(Union(BBox(TL, TR), BBox(BR, BL)));
+	float zMax = pts[0].z, zMin = pts[0].z;
+	for (int i = 1; i < 4; ++i) {
+		if (pts[i].z < zMin) zMin = pts[i].z;
+		if (pts[i].z > zMax) zMax = pts[i].z;
+	}
+
+	BBox bbox(Point(TL.x, TL.y, zMin), Point(BR.x, BR.y, zMax));
 	if (!bbox.IntersectP((*WorldToObject)(r))) return false;
 
 	int vptr[6] = { 0,1,2,0,2,3 };
-	Point pts[4] = { TL,TR,BR,BL };
 	float uvs[8] = { TL.x, TL.y, TR.x, TR.y, BR.x, BR.y, BL.x, BL.y };
 
 	DebugerDrawTriangle(TL, TR, BR, true);
@@ -167,9 +174,9 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 	//DebugerDrawPoint(gridIntersect, 0, 0, 1, true);
 
 	// Set up 3D DDA for ray
-	float NextCrossingT[3], DeltaT[3];
-	int Step[3], Out[3], Pos[3];
-	for (int axis = 0; axis < 3; ++axis) {
+	float NextCrossingT[2], DeltaT[2];
+	int Step[2], Out[2], Pos[2];
+	for (int axis = 0; axis < 2; ++axis) {
 		// Compute current voxel for axis
 		Pos[axis] = posToVoxel(gridIntersect, axis);
 		if (ray.d[axis] >= 0) {
@@ -201,10 +208,8 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 		// Advance to next voxel
 
 		// Find _stepAxis_ for stepping to next voxel
-		int bits = ((NextCrossingT[0] < NextCrossingT[1]) << 2) +
-			       ((NextCrossingT[0] < NextCrossingT[2]) << 1) +
-			       ((NextCrossingT[1] < NextCrossingT[2]));
-		const int cmpToAxis[8] = { 2, 1, 2, 1, 2, 2, 0, 0 };
+		int bits = (NextCrossingT[0] < NextCrossingT[1]);
+		const int cmpToAxis[2] = { 1, 0 };
 		int stepAxis = cmpToAxis[bits];
 		if (ray.maxt < NextCrossingT[stepAxis])
 			break;
@@ -221,7 +226,6 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 	*rayEpsilon = intersection.rayEpsilon;
 	*dg = intersection.dg;
 
-	Point pp = ray(_tHit);
 	//DebugerDrawPoint(pp, 1, 0, 0, true);
 	//DebugerDrawPoint(intersection.dg.p, 0, 1, 0, false);
 	

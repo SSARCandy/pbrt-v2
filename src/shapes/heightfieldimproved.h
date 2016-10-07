@@ -50,6 +50,7 @@ private:
     int nx, ny;
 	int nVoxels[3]; // [nx-1, ny-1, 1]
 	Normal *vertexNormals;
+	float minz, maxz; // save it for BBox
 };
 
 
