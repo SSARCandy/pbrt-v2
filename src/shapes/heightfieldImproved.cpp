@@ -40,7 +40,7 @@ BBox HeightfieldImproved::ObjectBound() const {
 	return BBox(Point(0, 0, minz), Point(1, 1, maxz));
 }
 
-bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit) const {
+bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit, BBox &bbox) const {
 	Point TL(voxelToPos(x, 0),     voxelToPos(y, 1),     getZ(x, y));
 	Point TR(voxelToPos(x + 1, 0), voxelToPos(y, 1),     getZ(x + 1, y));
 	Point BR(voxelToPos(x + 1, 0), voxelToPos(y + 1, 1), getZ(x + 1, y + 1));
@@ -54,7 +54,6 @@ bool HeightfieldImproved::VoxelIntersector(const Ray &r, int x, int y, Intersect
 		if (pts[i].z > zMax) zMax = pts[i].z;
 	}
 
-	BBox bbox;
 	bbox.pMin = Point(TL.x, TL.y, zMin);
 	bbox.pMax = Point(BR.x, BR.y, zMax);
 	if (!bbox.IntersectP(r)) return false;
@@ -204,7 +203,7 @@ bool HeightfieldImproved::Intersect(const Ray &r, float *tHit, float *rayEpsilon
 	bool hitSomething = false;
 	for (;;) {
 		int i = Pos[0], j = Pos[1];
-		hitSomething = VoxelIntersector(ray, i, j, &intersection, &_tHit);
+		hitSomething = VoxelIntersector(ray, i, j, &intersection, &_tHit, bbox);
 
 		// no overlapping voxels in heightfield
 		if (hitSomething) break;

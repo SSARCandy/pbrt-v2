@@ -28,7 +28,7 @@ private:
 	void DebugerDrawLine(Point pt1, Point pt2, bool inWorldSpace) const;
 
 
-	bool VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit) const;
+	bool VoxelIntersector(const Ray &r, int x, int y, Intersection *in, float *tHit, BBox &bbox) const;
 	void ComputeVertexNormal();
 	inline bool OutOfBoundary(int x, int y) {
 		return x < 0 || y < 0 || x >= nx || y >= ny;
