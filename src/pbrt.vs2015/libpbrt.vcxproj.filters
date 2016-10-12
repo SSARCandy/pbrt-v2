@@ -912,11 +912,11 @@
     <ClInclude Include="..\core\targa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\shapes\heightfieldimproved.h">
-      <Filter>Header Files\shapes</Filter>
-    </ClInclude>
     <ClInclude Include="..\vdb.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shapes\heightfield2.h">
+      <Filter>Header Files\shapes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1688,7 +1688,7 @@
     <ClCompile Include="..\core\targa.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\shapes\heightfieldImproved.cpp">
+    <ClCompile Include="..\shapes\heightfield2.cpp">
       <Filter>Source Files\shapes</Filter>
     </ClCompile>
   </ItemGroup>
