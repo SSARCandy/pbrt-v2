@@ -68,14 +68,16 @@ bool Heightfield::CanIntersect() const {
 
 
 void Heightfield::Refine(vector<Reference<Shape> > &refined) const {
-    int ntris = 2*(nx-1)*(ny-1);
+    int ntris = 2*(nx-1)*(ny-1); // how many triangles
     refined.reserve(ntris);
-    int *verts = new int[3*ntris];
+    int *verts = new int[3*ntris]; // total vertices in triangles 
     Point *P = new Point[nx*ny];
     float *uvs = new float[2*nx*ny];
     int nverts = nx*ny;
     int x, y;
+
     // Compute heightfield vertex positions
+    // (0, 0) <= (x, y) <= (1, 1)
     int pos = 0;
     for (y = 0; y < ny; ++y) {
         for (x = 0; x < nx; ++x) {
