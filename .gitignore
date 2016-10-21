@@ -32,4 +32,3 @@ src/pbrt.vs*/*.VC.db
 tmp/
 bin/
 lib/
-*.exr
