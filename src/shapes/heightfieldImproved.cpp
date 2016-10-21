@@ -133,11 +133,11 @@ void HeightfieldImproved::ComputeVertexNormal() {
 
 #define X(p1,p2) Cross((p1-M),(p2-M))
 			// the true normal = average of all 6 normals
-			Vector aggerateNormal = X(TL, T) + X(T, L) + X(L, B) + X(B, BR) + X(BR, R) + X(R, T);
+			Vector aggerateNormal = X(TL, L) + X(L, B) + X(B, BR) + X(BR, R) + X(R, T) + X(T, TL);
 #undef X
 
-			vertexNormals[y*ny + x] = Normal(Normalize(aggerateNormal));
-			DebugerDrawLine(M, M + Normalize(aggerateNormal)/5, true);
+			vertexNormals[y*ny + x] = Normal(aggerateNormal);
+			DebugerDrawLine(M, M + Normalize(aggerateNormal), true);
 		}
 	}
 
