@@ -21,7 +21,7 @@ public:
 	float GenerateRay(const CameraSample &sample, Ray *) const;
   
 private:
-	// RealisticCamera Public Methods
+	// RealisticCamera Private Data
 
 };
 
