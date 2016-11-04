@@ -10,6 +10,15 @@
 #include "paramset.h"
 #include "film.h"
 
+struct Lens {
+	float radius;
+	float thickness;
+	float axpos;
+	float n;
+	float aperture;
+	//bool Intersect(const Ray &r, Point *pHit, Vector *normal) const;
+};
+
 // RealisticCamera Declarations
 class RealisticCamera : public Camera {
 public:
@@ -22,7 +31,15 @@ public:
   
 private:
 	// RealisticCamera Private Data
+	vector<Lens> lens;
+	float raster_diagonal;
+	float film_diagonal;
+	float film_distance;
+	float film_position;
+	float hither;
+	float yon;
 
+	Transform Raster2Camera, Camera2Raster;
 };
 
 
