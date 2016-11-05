@@ -1,6 +1,8 @@
 
 #include "stdafx.h"
+#include "vdb.h"
 #include "cameras/realistic.h"
+#include "shapes/sphere.h"
 #include <fstream>
 
 using namespace std;
@@ -12,9 +14,10 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &cam2world,
 				 float filmdiag, Film *f)
 	: Camera(cam2world, sopen, sclose, f) // pbrt-v2 doesnot specify hither and yon
 {
-   // YOUR CODE HERE -- build and store datastructures representing the given lens
-   // and film placement.
-
+	// YOUR CODE HERE -- build and store datastructures representing the given lens
+	// and film placement.
+	Vector v;
+	//SnellsLaw(Vector(-3, -4, 0), Vector(0, 1, 0), 0.5, 1.5, &v);
 	char line[100];
 	fstream fin;
 	fin.open(specfile, ios::in);
@@ -22,7 +25,6 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &cam2world,
 		if (line[0] == '#') continue;
 
 		Lens l;
-		//float radius, sep, n, aperture;
 		sscanf(line, "%f %f %f %f", &(l.radius), &(l.axpos), &(l.n), &(l.aperture));
 		lens.push_back(l);
 	}
@@ -47,12 +49,83 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &cam2world,
 }
 
 float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
-  // YOUR CODE HERE -- make that ray!
-  
-  // use sample->imageX and sample->imageY to get raster-space coordinates
-  // of the sample point on the film.
-  // use sample->lensU and sample->lensV to get a sample position on the lens
-   return 0;
+	// Sample point on lens, scale to aperture radius
+	
+	float lensU, lensV;
+	ConcentricSampleDisk(sample.lensU, sample.lensV, &lensU, &lensV);
+	lensU *= lens.back().aperture*0.5f;
+	lensV *= lens.back().aperture*0.5f;
+
+	// Generate raster and camera samples
+	Point Praster(sample.imageX, sample.imageY, 0);
+	Point Pcamera;
+	Raster2Camera(Praster, &Pcamera);
+
+	Vector rayDirection = Point(lensU, lensV, lens.back().axpos) - Pcamera;
+	Ray r(Pcamera, rayDirection, INFINITY, 0);
+
+	for (int i = lens.size() - 1; i >= 0; i--) {
+		// Check intersection with this lens
+		Point pHit;
+		Vector normal;
+		if (!LensIntersect(lens[i], r, &pHit, &normal)) {
+			return 0;
+		}
+
+		// Use SnellsLaw to get new Ray direcion
+		Vector rayDirection2;
+		if (!SnellsLaw(rayDirection, normal, lens[i].n, (i == 0 ? 1 : lens[i - 1].n), &rayDirection2)) {
+			return 0;
+		}
+
+		r = Ray(pHit, Normalize(rayDirection2), INFINITY, 0);
+	}
+
+	CameraToWorld(r, ray);
+	ray->d = Normalize(ray->d);
+
+	// Return the weight of generated Ray
+	// E = A*cos^4(theta)/Z^2
+	float A = M_PI* pow(lens.back().aperture / 2, 2);
+	float Z = film_distance;
+	float costheta = Dot(r.d, Vector(0, 0, 1));
+
+	float E = A*pow(costheta, 4) / (Z*Z);
+
+    return E;
+}
+
+bool RealisticCamera::LensIntersect(const Lens l, const Ray & r, Point * pHit, Vector * normal) const {
+	if (l.radius != 0) {
+		float th = 0;
+		Vector w2oV(0.f, 0.f, l.radius - l.axpos);
+		Transform o2w = Translate(-1 * w2oV);
+		Transform w2o = Translate(1 * w2oV);
+
+		Sphere sphere(&o2w, &w2o, false, abs(l.radius), -1 * l.radius, l. radius, 360);
+
+		float rayEpsilon;
+		DifferentialGeometry dg;
+		if (!sphere.Intersect(r, &th, &rayEpsilon, &dg)) return false;
+		if (th > r.maxt || th < r.mint) return false;
+
+		*pHit = r(th);
+
+	} else {
+		// using absolute value because ray can come from either side
+		float scale = fabs((l.axpos - r.o.z) / r.d.z);
+		*pHit = r.o + scale*r.d;
+	}
+
+	// check aperture
+	if ((pHit->x * pHit->x + pHit->y * pHit->y) >= (l.aperture*l.aperture) / 4) {
+		return false;
+	}
+
+	// returned normal always points from the sphere surface outward
+	*normal = Normalize(*pHit - Point(0, 0, l.axpos - l.radius));
+
+	return true;
 }
 
 // https://www.wikiwand.com/en/Snell's_law#/Vector_form

@@ -12,7 +12,7 @@
 
 struct Lens {
 	float radius; // Radius of lens sphere
-	float thickness;
+	//float thickness;
 	float axpos; // Relative position of the current interface (measured from the last interface).
 	float n; // Index of refraction corresponding the current lens element.
 	float aperture; // Diameter of the lens element for the current interface definition.
