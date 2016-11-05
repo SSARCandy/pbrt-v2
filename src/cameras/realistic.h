@@ -11,12 +11,11 @@
 #include "film.h"
 
 struct Lens {
-	float radius;
+	float radius; // Radius of lens sphere
 	float thickness;
-	float axpos;
-	float n;
-	float aperture;
-	//bool Intersect(const Ray &r, Point *pHit, Vector *normal) const;
+	float axpos; // Relative position of the current interface (measured from the last interface).
+	float n; // Index of refraction corresponding the current lens element.
+	float aperture; // Diameter of the lens element for the current interface definition.
 };
 
 // RealisticCamera Declarations
@@ -28,6 +27,8 @@ public:
 						float sclose, float filmdistance, float aperture_diameter, string specfile,
 						float filmdiag, Film *film);
 	float GenerateRay(const CameraSample &sample, Ray *) const;
+	bool LensIntersect(const Lens l, const Ray &r, Point *pHit, Vector *normal) const;
+	bool SnellsLaw(const Vector vin, const Vector normal, const float N1, const float N2, Vector *vout) const;
   
 private:
 	// RealisticCamera Private Data

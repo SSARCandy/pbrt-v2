@@ -55,6 +55,40 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
    return 0;
 }
 
+// https://www.wikiwand.com/en/Snell's_law#/Vector_form
+bool RealisticCamera::SnellsLaw(const Vector vin, const Vector normal, const float N1, const float N2, Vector * vout) const {
+
+	Vector l = Normalize(vin);
+	Vector n = Normalize(normal);
+	// r = n1/n2
+	// c = dot(-normal, vin)
+	// Vrefract = r x l + (r x c - (1 - mu^2 x (1 - c^2))^0.5)n
+	float r = N1 / N2;
+	float c = Dot(-n, l);
+	int sign = c < 0 ? -1 : 1; // cos(theta) must > 0
+
+	// total reflaction
+	float tmp = 1 - r*r*(1 - c*c);
+	if (tmp < 0) {
+		return false;
+	}
+
+	Vector refract = r*l + (r*c - sign*sqrt(tmp))*n;
+
+	*vout = refract;
+
+	//Vector t = Cross(n, l);
+	//t = Cross(t, n);
+	//vdb_line(-t.x, -t.y, -t.z, t.x, t.y, t.z);
+	//vdb_color(0, 1, 0);
+	//vdb_line(l.x, l.y, l.z, -l.x, -l.y, -l.z);
+	//vdb_color(1, 0, 0);
+	//vdb_line(-n.x, -n.y, -n.z, n.x, n.y, n.z);
+	//vdb_color(0, 0, 1);
+	//vdb_line(refract.x, refract.y, refract.z, -refract.x, -refract.y, -refract.z);
+
+	return true;
+}
 
 RealisticCamera *CreateRealisticCamera(const ParamSet &params,
         const AnimatedTransform &cam2world, Film *film) {
