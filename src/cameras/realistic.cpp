@@ -112,10 +112,15 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 	//	d(ray->o.x + 100 * rayDirection.x, ray->o.y + 100 * rayDirection.y, ray->o.z + 100 * rayDirection.z);
 	//vdb_line(o.x,o.y,o.z, d.x,d.y,d.z);
 	//draw = !((vdb_c++) % 10000);
+
+
+	// Return the weight of generated Ray
+	// E = A*cos^4(theta)/Z^2
 	float r = lens.back().aperture*0.5;
 	float A = M_PI* r*r;
 	float Z = film_distance;
 	float costheta = Dot(ray->d, Vector(0, 0, 1));
+	float E = A*pow(costheta, 4) / (Z*Z);
 
 
 	for (int i = lens.size() - 1; i >= 0; i--) {
@@ -131,6 +136,7 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 		float n1 = lens[i].n;
 		float n2 = i == 0 ? 1 : lens[i - 1].n;
 
+		// Keep normal pointed to the film side
 		if (lens[i].radius*ray->d.z > 0) {
 			normal = -normal;
 		}
@@ -147,18 +153,17 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 	}
 
 	CameraToWorld(*ray, ray);
-	//ray->d = Normalize(ray->d);
-
-	// Return the weight of generated Ray
-	// E = A*cos^4(theta)/Z^2
-	float E = A*pow(costheta, 4) / (Z*Z);
 
     return E;
 }
 
 bool RealisticCamera::LensIntersect(const Lens l, const Ray & r, Point * pHit, Vector * normal) const {
-	if (l.radius != 0) {
-		float th = 0;
+	if (l.radius == 0) {
+		// using absolute value because ray can come from either side
+		float scale = fabs((l.abs_axpos - r.o.z) / r.d.z);
+		*pHit = r.o + scale*r.d;
+	} else {
+		float thit = 0;
 		Vector w2oV(0.f, 0.f, l.radius - l.abs_axpos);
 		Transform o2w = Translate(-1 * w2oV);
 		Transform w2o = Translate(1 * w2oV);
@@ -167,14 +172,10 @@ bool RealisticCamera::LensIntersect(const Lens l, const Ray & r, Point * pHit, V
 
 		float rayEpsilon;
 		DifferentialGeometry dg;
-		if (!sphere.Intersect(r, &th, &rayEpsilon, &dg)) return false;
-		if (th > r.maxt || th < r.mint) return false;
+		if (!sphere.Intersect(r, &thit, &rayEpsilon, &dg)) return false;
+		if (thit > r.maxt || thit < r.mint) return false;
 
-		*pHit = r(th);
-	} else {
-		// using absolute value because ray can come from either side
-		float scale = fabs((l.abs_axpos - r.o.z) / r.d.z);
-		*pHit = r.o + scale*r.d;
+		*pHit = r(thit);
 	}
 
 	// check aperture
@@ -195,31 +196,18 @@ bool RealisticCamera::LensIntersect(const Lens l, const Ray & r, Point * pHit, V
 
 // https://www.wikiwand.com/en/Snell's_law#/Vector_form
 bool RealisticCamera::SnellsLaw(const Vector l, Vector * refract, const Vector n, const float N1, const float N2) const {
-	//Vector l = Normalize(vin);
-	//Vector n = Normalize(normal);
-
 	// Refract = r x l + (r x c - sqrt(1 - r^2 x (1 - c^2)))n
 	float r = N1 / N2;
 	float c = Dot(-n, l);
-	//int sign = c < 0 ? -1 : 1; // cos(theta) must > 0
+	int sign = c < 0 ? -1 : 1; // cos(theta) must > 0
+	float tmp = 1 - r*r*(1 - c*c);
 
 	// Total reflection
-	float tmp = 1 - r*r*(1 - c*c);
 	if (tmp < 0) {
 		return false;
 	}
 
-	*refract = r*l + (r*c - sqrt(tmp))*n;
-
-	//Vector t = Cross(n, l);
-	//t = Cross(t, n);
-	//vdb_line(-t.x, -t.y, -t.z, t.x, t.y, t.z);
-	//vdb_color(0, 1, 0);
-	//vdb_line(l.x, l.y, l.z, -l.x, -l.y, -l.z);
-	//vdb_color(1, 0, 0);
-	//vdb_line(-n.x, -n.y, -n.z, n.x, n.y, n.z);
-	//vdb_color(0, 0, 1);
-	//vdb_line(refract.x, refract.y, refract.z, -refract.x, -refract.y, -refract.z);
+	*refract = r*l + (r*c - sign*sqrt(tmp))*n;
 
 	return true;
 }
