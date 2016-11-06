@@ -14,6 +14,7 @@ struct Lens {
 	float radius; // Radius of lens sphere
 	//float thickness;
 	float axpos; // Relative position of the current interface (measured from the last interface).
+	float abs_axpos; // Absolute position of current lens (measured from the first interface).
 	float n; // Index of refraction corresponding the current lens element.
 	float aperture; // Diameter of the lens element for the current interface definition.
 };
@@ -28,7 +29,7 @@ public:
 						float filmdiag, Film *film);
 	float GenerateRay(const CameraSample &sample, Ray *) const;
 	bool LensIntersect(const Lens l, const Ray &r, Point *pHit, Vector *normal) const;
-	bool SnellsLaw(const Vector vin, const Vector normal, const float N1, const float N2, Vector *vout) const;
+	bool SnellsLaw(const Vector l, Vector * refract, const Vector n, const float N1, const float N2) const;
   
 private:
 	// RealisticCamera Private Data
