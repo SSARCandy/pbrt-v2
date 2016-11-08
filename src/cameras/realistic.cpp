@@ -116,16 +116,6 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 	//vdb_line(o.x,o.y,o.z, d.x,d.y,d.z);
 	//draw = !((vdb_c++) % 10000);
 
-
-	// Return the weight of generated Ray
-	// E = A*cos^4(theta)/Z^2
-	float r = lens.back().aperture*0.5;
-	float A = M_PI* r*r;
-	float Z = film_distance;
-	float costheta = Dot(ray->d, Vector(0, 0, 1));
-	float E = A*pow(costheta, 4) / (Z*Z);
-
-
 	for (int i = lens.size() - 1; i >= 0; i--) {
 		// Check intersection with this lens
 		Point pHit;
@@ -156,6 +146,14 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 	}
 
 	CameraToWorld(*ray, ray);
+
+	// Return the weight of generated Ray
+	// E = A*cos^4(theta)/Z^2
+	float r = lens.back().aperture*0.5;
+	float A = M_PI* r*r;
+	float Z = film_distance;
+	float costheta = Dot(rayDirection, Vector(0, 0, 1));
+	float E = A*pow(costheta, 4) / (Z*Z);
 
     return E;
 }
