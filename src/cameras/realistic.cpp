@@ -103,6 +103,8 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 	//Ray r(Pcamera, rayDirection, INFINITY, 0);
 	ray->d = rayDirection;
 	ray->o = Pcamera;
+	ray->mint = 0;
+	ray->maxt = INFINITY;
 	//ray->time = 0;
 
 	//vdb_color(1, 0, 0);
