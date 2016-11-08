@@ -28,6 +28,7 @@ public:
 						float filmdiag, Film *film);
 	float GenerateRay(const CameraSample &sample, Ray *) const;
 	bool LensIntersect(const Lens l, const Ray &r, Point *pHit, Vector *normal) const;
+	bool SphereIntersect(const Ray &r, float *tHit, Transform *w2o, float radius) const;
 	bool SnellsLaw(const Vector l, Vector * refract, const Vector n, const float N1, const float N2) const;
   
 private:

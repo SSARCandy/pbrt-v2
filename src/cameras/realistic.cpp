@@ -131,15 +131,9 @@ bool RealisticCamera::LensIntersect(const Lens l, const Ray & r, Point * pHit, V
 		*pHit = r.o + scale*r.d;
 	} else {
 		float thit = 0;
-		Vector w2oV(0.f, 0.f, l.radius - l.abs_axpos);
-		Transform o2w = Translate(-1 * w2oV);
-		Transform w2o = Translate(1 * w2oV);
+		Transform w2o = Translate(Vector(0.f, 0.f, l.radius - l.abs_axpos));
 
-		Sphere sphere(&o2w, &w2o, false, abs(l.radius), -1 * l.radius, l. radius, 360);
-
-		float rayEpsilon;
-		DifferentialGeometry dg;
-		if (!sphere.Intersect(r, &thit, &rayEpsilon, &dg)) return false;
+		if (!SphereIntersect(r, &thit, &w2o, l.radius)) return false;
 		if (thit > r.maxt || thit < r.mint) return false;
 
 		*pHit = r(thit);
@@ -175,6 +169,37 @@ bool RealisticCamera::SnellsLaw(const Vector l, Vector * refract, const Vector n
 	}
 
 	*refract = r*l + (r*c - sign*sqrt(tmp))*n;
+
+	return true;
+}
+
+bool RealisticCamera::SphereIntersect(const Ray &r, float *tHit, Transform *w2o, float radius) const {
+	float phi;
+	Point phit;
+	// Transform _Ray_ to object space
+	Ray ray;
+	(*w2o)(r, &ray);
+
+	// Compute quadratic sphere coefficients
+	float A = ray.d.x*ray.d.x + ray.d.y*ray.d.y + ray.d.z*ray.d.z;
+	float B = 2 * (ray.d.x*ray.o.x + ray.d.y*ray.o.y + ray.d.z*ray.o.z);
+	float C = ray.o.x*ray.o.x + ray.o.y*ray.o.y + ray.o.z*ray.o.z - radius*radius;
+
+	// Solve quadratic equation for _t_ values
+	float t0, t1;
+	if (!Quadratic(A, B, C, &t0, &t1))
+		return false;
+
+	// Compute intersection distance along ray
+	if (t0 > ray.maxt || t1 < ray.mint)
+		return false;
+	float thit = t0;
+	if (t0 < ray.mint) {
+		thit = t1;
+		if (thit > ray.maxt) return false;
+	}
+
+	*tHit = thit;
 
 	return true;
 }
