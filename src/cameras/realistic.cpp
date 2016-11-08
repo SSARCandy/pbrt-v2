@@ -7,8 +7,8 @@
 
 using namespace std;
 
-int vdb_c = 0;
-bool draw = false;
+//int vdb_c = 0;
+//bool draw = false;
 
 RealisticCamera::RealisticCamera(const AnimatedTransform &cam2world,
 				 float hither, float yon, 
@@ -17,8 +17,6 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &cam2world,
 				 float filmdiag, Film *f)
 	: Camera(cam2world, sopen, sclose, f) // pbrt-v2 doesnot specify hither and yon
 {
-	// YOUR CODE HERE -- build and store datastructures representing the given lens
-	// and film placement.
 	char line[100];
 	fstream fin;
 	fin.open(specfile, ios::in);
@@ -42,8 +40,6 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &cam2world,
 		lens.push_back(l);
 	}
 
-	//lens = lens.reserve();
-
 	assert(lens.size()); // no lens been defined !
 
 	this->yon = yon;
@@ -56,35 +52,18 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &cam2world,
 	this->raster_diagonal = sqrt(f->xResolution*f->xResolution +
 								 f->yResolution*f->yResolution);
 
-	//float slide = sqrt((float)(f->xResolution*f->xResolution + f->yResolution*f->yResolution));
-	//Raster2Camera = Scale(film_diagonal / slide, film_diagonal / slide, 0)*Translate(Vector(-f->xResolution / 2, -f->yResolution / 2, 0));
 	this->Raster2Camera = Translate(Vector((f->xResolution *0.5)*film_diagonal / raster_diagonal, -f->yResolution *0.5*film_diagonal / raster_diagonal, 0))
 		*Scale(film_diagonal / raster_diagonal, film_diagonal / raster_diagonal, 1)
 		*Scale(-1.f, 1.f, 1.f);
 		
-		//*Scale(-1, 1, 1);
-
 	this->Camera2Raster = Inverse(Raster2Camera);
 
 	// vdb draw film
-	vdb_point(0,0,0);
+	//vdb_point(0,0,0);
 
-	vdb_color(1.f, 1.f, 1.f);
-	vdb_line(0, 15, film_position, 0, -15, film_position);
-	vdb_line(15, 0, film_position, -15, 0, film_position);
-
-	// vdb draw lens elements
-	vdb_color(0.f, 0.f, 1.f);
-	for (size_t i = 0; i < lens.size(); i++) {
-		vdb_begin();
-		//u += lens[i].axpos;
-		for (float r = 0; r < lens[i].aperture / 2.f; r += 0.5) {
-			for (float theta = 0; theta < 6.28; theta += 1 / (r + 0.5)) {
-				vdb_point(r*cos(theta), r*sin(theta), lens[i].abs_axpos);
-			}
-		}
-		vdb_end();
-	}
+	//vdb_color(1.f, 1.f, 1.f);
+	//vdb_line(0, 15, film_position, 0, -15, film_position);
+	//vdb_line(15, 0, film_position, -15, 0, film_position);
 }
 
 float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
@@ -100,43 +79,30 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 	Raster2Camera(Praster, &Pcamera);
 
 	Vector rayDirection = Normalize(Point(lensU, lensV, lens.back().abs_axpos) - Pcamera);
-	//Ray r(Pcamera, rayDirection, INFINITY, 0);
 	ray->d = rayDirection;
 	ray->o = Pcamera;
 	ray->mint = 0;
 	ray->maxt = INFINITY;
 	//ray->time = 0;
 
-	//vdb_color(1, 0, 0);
-	//vdb_point(Pcamera.x, Pcamera.y, Pcamera.z);
-	//vdb_color(0, 1, 0);
-	//vdb_point(Praster.x, Praster.y, Praster.z);
-	//Point o(ray->o.x, ray->o.y, ray->o.z),		
-	//	d(ray->o.x + 100 * rayDirection.x, ray->o.y + 100 * rayDirection.y, ray->o.z + 100 * rayDirection.z);
-	//vdb_line(o.x,o.y,o.z, d.x,d.y,d.z);
 	//draw = !((vdb_c++) % 10000);
 
 	for (int i = lens.size() - 1; i >= 0; i--) {
 		// Check intersection with this lens
 		Point pHit;
 		Vector normal;
-		if (!LensIntersect(lens[i], *ray, &pHit, &normal)) {
-			return 0;
-		}
+		if (!LensIntersect(lens[i], *ray, &pHit, &normal)) return 0;
+
+		// Keep normal pointed to the film side
+		if (lens[i].radius*ray->d.z > 0) {
+			normal = -normal;
+		}		
 
 		// Use SnellsLaw to get new Ray direcion
 		Vector rayDirection2;
 		float n1 = lens[i].n;
 		float n2 = i == 0 ? 1 : lens[i - 1].n;
-
-		// Keep normal pointed to the film side
-		if (lens[i].radius*ray->d.z > 0) {
-			normal = -normal;
-		}
-
-		if (!SnellsLaw(ray->d, &rayDirection2, normal, n1, n2)) {
-			return 0;
-		}
+		if (!SnellsLaw(ray->d, &rayDirection2, normal, n1, n2)) return 0;
 
 		//vdb_color(1, 1, 0);
 		//vdb_point(pHit.x, pHit.y, pHit.z);
@@ -160,8 +126,8 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 
 bool RealisticCamera::LensIntersect(const Lens l, const Ray & r, Point * pHit, Vector * normal) const {
 	if (l.radius == 0) {
-		// using absolute value because ray can come from either side
-		float scale = fabs((l.abs_axpos - r.o.z) / r.d.z);
+		// Use absolute value because ray can come from either side
+		float scale = abs((l.abs_axpos - r.o.z) / r.d.z);
 		*pHit = r.o + scale*r.d;
 	} else {
 		float thit = 0;
@@ -179,18 +145,18 @@ bool RealisticCamera::LensIntersect(const Lens l, const Ray & r, Point * pHit, V
 		*pHit = r(thit);
 	}
 
-	// check aperture
+	// Check aperture x^2 + y^2 < (aperture/2)^2
 	if ((pHit->x * pHit->x + pHit->y * pHit->y) >= (l.aperture*l.aperture) / 4) {
 		return false;
 	}
 
-	// returned normal always points from the sphere surface outward
+	// Returned normal always points from the sphere surface outward
 	*normal = Normalize(*pHit - Point(0, 0, l.abs_axpos - l.radius));
 
-	if (draw) {
-		vdb_color(1, 0, 0);
-		vdb_line(r.o.x, r.o.y, r.o.z, pHit->x, pHit->y, pHit->z);
-	}
+	//if (draw) {
+	//	vdb_color(1, 0, 0);
+	//	vdb_line(r.o.x, r.o.y, r.o.z, pHit->x, pHit->y, pHit->z);
+	//}
 
 	return true;
 }
