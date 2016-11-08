@@ -30,6 +30,7 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &cam2world,
 
 		if (l.radius == 0) {
 			l.n = 1;
+			l.aperture = aperture_diameter;
 		}
 
 		if (lens.size()) {
@@ -141,7 +142,7 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 			normal = -normal;
 		}
 
-		if (!SnellsLaw(rayDirection, &rayDirection2, normal, n1, n2)) {
+		if (!SnellsLaw(ray->d, &rayDirection2, normal, n1, n2)) {
 			return 0;
 		}
 
