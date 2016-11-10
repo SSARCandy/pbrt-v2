@@ -5,6 +5,7 @@
 #include "shapes/heightfieldImproved.h"
 #include "shapes/trianglemesh.h"
 #include "paramset.h"
+#include "core/intersection.h"
 //#include "core/primitive.h"
 
 

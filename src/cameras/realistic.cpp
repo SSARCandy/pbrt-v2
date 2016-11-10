@@ -3,7 +3,11 @@
 #include "vdb.h"
 #include "cameras/realistic.h"
 #include "shapes/sphere.h"
+#include "paramset.h"
+#include "sampler.h"
+#include "montecarlo.h"
 #include <fstream>
+#include <string>
 
 using namespace std;
 
@@ -17,14 +21,13 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &cam2world,
 				 float filmdiag, Film *f)
 	: Camera(cam2world, sopen, sclose, f) // pbrt-v2 doesnot specify hither and yon
 {
-	char line[100];
-	fstream fin;
-	fin.open(specfile, ios::in);
-	while (fin.getline(line, sizeof(line), '\n')) {
+	string line;
+	ifstream fin(specfile.c_str());
+	while (getline(fin, line)) {
 		if (line[0] == '#') continue;
 
 		Lens l;
-		sscanf(line, "%f %f %f %f", &(l.radius), &(l.axpos), &(l.n), &(l.aperture));
+		sscanf(line.c_str(), "%f %f %f %f", &(l.radius), &(l.axpos), &(l.n), &(l.aperture));
 
 		if (l.radius == 0) {
 			l.n = 1;
@@ -39,6 +42,8 @@ RealisticCamera::RealisticCamera(const AnimatedTransform &cam2world,
 
 		lens.push_back(l);
 	}
+
+	fin.close();
 
 	assert(lens.size()); // no lens been defined !
 
@@ -127,7 +132,7 @@ float RealisticCamera::GenerateRay(const CameraSample &sample, Ray *ray) const {
 bool RealisticCamera::LensIntersect(const Lens l, const Ray & r, Point * pHit, Vector * normal) const {
 	if (l.radius == 0) {
 		// Use absolute value because ray can come from either side
-		float scale = abs((l.abs_axpos - r.o.z) / r.d.z);
+		float scale = fabs((l.abs_axpos - r.o.z) / r.d.z);
 		*pHit = r.o + scale*r.d;
 	} else {
 		float thit = 0;
