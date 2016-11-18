@@ -166,6 +166,7 @@
     <ClInclude Include="..\cameras\environment.h" />
     <ClInclude Include="..\cameras\orthographic.h" />
     <ClInclude Include="..\cameras\perspective.h" />
+    <ClInclude Include="..\cameras\realistic.h" />
     <ClInclude Include="..\core\api.h" />
     <ClInclude Include="..\core\camera.h" />
     <ClInclude Include="..\core\diffgeom.h" />
@@ -1102,6 +1103,7 @@
     <ClCompile Include="..\cameras\environment.cpp" />
     <ClCompile Include="..\cameras\orthographic.cpp" />
     <ClCompile Include="..\cameras\perspective.cpp" />
+    <ClCompile Include="..\cameras\realistic.cpp" />
     <ClCompile Include="..\core\api.cpp" />
     <ClCompile Include="..\core\camera.cpp" />
     <ClCompile Include="..\core\diffgeom.cpp" />

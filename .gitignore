@@ -27,9 +27,9 @@ src/pbrt.vs*/*.user
 src/pbrt.vs*/*.VC.opendb
 src/pbrt.vs*/.vs
 src/pbrt.vs*/*.VC.db
+src/pbrt.vs*/*.exr
 
 # VS Build folders
 tmp/
 bin/
 lib/
-*.exr
