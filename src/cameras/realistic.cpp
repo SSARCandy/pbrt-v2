@@ -1,6 +1,6 @@
 
 #include "stdafx.h"
-#include "vdb.h"
+//#include "vdb.h"
 #include "cameras/realistic.h"
 #include "shapes/sphere.h"
 #include "paramset.h"
