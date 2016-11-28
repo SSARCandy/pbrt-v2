@@ -21,7 +21,7 @@ public:
         const string &texmap);
     ~MedianCutEnvironmentLight();
     Spectrum Power(const Scene *) const;
-    bool IsDeltaLight() const { return false; }
+    bool IsDeltaLight() const { return true; }
     Spectrum Le(const RayDifferential &r) const;
     Spectrum Sample_L(const Point &p, float pEpsilon, const LightSample &ls,
         float time, Vector *wi, float *pdf, VisibilityTester *visibility) const;
