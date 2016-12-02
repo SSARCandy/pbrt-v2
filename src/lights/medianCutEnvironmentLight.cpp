@@ -7,9 +7,9 @@
 #include "imageio.h"
 
 // MedianCutEnvironmentLight Utility Classes
-struct InfiniteAreaCube {
-    // InfiniteAreaCube Public Methods
-    InfiniteAreaCube(const MedianCutEnvironmentLight *l, const Scene *s,
+struct MedianCutEnvironmentLightCube {
+    // MedianCutEnvironmentLightCube Public Methods
+	MedianCutEnvironmentLightCube(const MedianCutEnvironmentLight *l, const Scene *s,
                      float t, bool cv, float pe)
         : light(l), scene(s), time(t), pEpsilon(pe), computeVis(cv) { }
     Spectrum operator()(int, int, const Point &p, const Vector &w) {
@@ -36,40 +36,6 @@ MedianCutEnvironmentLight::~MedianCutEnvironmentLight() {
 MedianCutEnvironmentLight::MedianCutEnvironmentLight(const Transform &light2world,
         const Spectrum &L, int ns, const string &texmap)
     : Light(light2world, ns) {
-    int width = 0, height = 0;
-    RGBSpectrum *texels = NULL;
-    // Read texel data from _texmap_ into _texels_
-    if (texmap != "") {
-        texels = ReadImage(texmap, &width, &height);
-        if (texels)
-            for (int i = 0; i < width * height; ++i)
-                texels[i] *= L.ToRGBSpectrum();
-    }
-    if (!texels) {
-        width = height = 1;
-        texels = new RGBSpectrum[1];
-        texels[0] = L.ToRGBSpectrum();
-    }
-    radianceMap = new MIPMap<RGBSpectrum>(width, height, texels);
-    delete[] texels;
-    // Initialize sampling PDFs for infinite area light
-
-    // Compute scalar-valued image _img_ from environment map
-    float filter = 1.f / max(width, height);
-    float *img = new float[width*height];
-    for (int v = 0; v < height; ++v) {
-        float vp = (float)v / (float)height;
-        float sinTheta = sinf(M_PI * float(v+.5f)/float(height));
-        for (int u = 0; u < width; ++u) {
-            float up = (float)u / (float)width;
-            img[u+v*width] = radianceMap->Lookup(up, vp, filter).y();
-            img[u+v*width] *= sinTheta;
-        }
-    }
-
-    // Compute sampling distributions for rows and columns of image
-    distribution = new Distribution2D(img, width, height);
-    delete[] img;
 }
 
 
@@ -142,7 +108,7 @@ void MedianCutEnvironmentLight::SHProject(const Point &p, float pEpsilon,
     }
     else {
         // Project _InfiniteAreaLight_ to SH from cube map sampling
-        SHProjectCube(InfiniteAreaCube(this, scene, time, computeLightVis,
+        SHProjectCube(MedianCutEnvironmentLightCube(this, scene, time, computeLightVis,
                                        pEpsilon),
                       p, 200, lmax, coeffs);
     }
@@ -163,29 +129,29 @@ MedianCutEnvironmentLight *CreateMedianCutEnvironmentLight(const Transform &ligh
 Spectrum MedianCutEnvironmentLight::Sample_L(const Point &p, float pEpsilon,
         const LightSample &ls, float time, Vector *wi, float *pdf,
         VisibilityTester *visibility) const {
-    PBRT_INFINITE_LIGHT_STARTED_SAMPLE();
-    // Find $(u,v)$ sample coordinates in infinite light texture
-    float uv[2], mapPdf;
-    distribution->SampleContinuous(ls.uPos[0], ls.uPos[1], uv, &mapPdf);
-    if (mapPdf == 0.f) return 0.f;
+	PBRT_INFINITE_LIGHT_STARTED_SAMPLE();
+	// Find $(u,v)$ sample coordinates in infinite light texture
+	float uv[2], mapPdf;
+	distribution->SampleContinuous(ls.uPos[0], ls.uPos[1], uv, &mapPdf);
+	if (mapPdf == 0.f) return 0.f;
 
-    // Convert infinite light sample point to direction
-    float theta = uv[1] * M_PI, phi = uv[0] * 2.f * M_PI;
-    float costheta = cosf(theta), sintheta = sinf(theta);
-    float sinphi = sinf(phi), cosphi = cosf(phi);
-    *wi = LightToWorld(Vector(sintheta * cosphi, sintheta * sinphi,
-                              costheta));
+	// Convert infinite light sample point to direction
+	float theta = uv[1] * M_PI, phi = uv[0] * 2.f * M_PI;
+	float costheta = cosf(theta), sintheta = sinf(theta);
+	float sinphi = sinf(phi), cosphi = cosf(phi);
+	*wi = LightToWorld(Vector(sintheta * cosphi, sintheta * sinphi,
+		costheta));
 
-    // Compute PDF for sampled infinite light direction
-    *pdf = mapPdf / (2.f * M_PI * M_PI * sintheta);
-    if (sintheta == 0.f) *pdf = 0.f;
+	// Compute PDF for sampled infinite light direction
+	*pdf = mapPdf / (2.f * M_PI * M_PI * sintheta);
+	if (sintheta == 0.f) *pdf = 0.f;
 
-    // Return radiance value for infinite light direction
-    visibility->SetRay(p, pEpsilon, *wi, time);
-    Spectrum Ls = Spectrum(radianceMap->Lookup(uv[0], uv[1]),
-                           SPECTRUM_ILLUMINANT);
-    PBRT_INFINITE_LIGHT_FINISHED_SAMPLE();
-    return Ls;
+	// Return radiance value for infinite light direction
+	visibility->SetRay(p, pEpsilon, *wi, time);
+	Spectrum Ls = Spectrum(radianceMap->Lookup(uv[0], uv[1]),
+		SPECTRUM_ILLUMINANT);
+	PBRT_INFINITE_LIGHT_FINISHED_SAMPLE();
+	return Ls;
 }
 
 
@@ -205,38 +171,9 @@ float MedianCutEnvironmentLight::Pdf(const Point &, const Vector &w) const {
 Spectrum MedianCutEnvironmentLight::Sample_L(const Scene *scene,
         const LightSample &ls, float u1, float u2, float time,
         Ray *ray, Normal *Ns, float *pdf) const {
-    PBRT_INFINITE_LIGHT_STARTED_SAMPLE();
-    // Compute direction for infinite light sample ray
 
-    // Find $(u,v)$ sample coordinates in infinite light texture
-    float uv[2], mapPdf;
-    distribution->SampleContinuous(ls.uPos[0], ls.uPos[1], uv, &mapPdf);
-    if (mapPdf == 0.f) return Spectrum(0.f);
+	// Shouldn't go here
+	assert(false);
 
-    float theta = uv[1] * M_PI, phi = uv[0] * 2.f * M_PI;
-    float costheta = cosf(theta), sintheta = sinf(theta);
-    float sinphi = sinf(phi), cosphi = cosf(phi);
-    Vector d = -LightToWorld(Vector(sintheta * cosphi, sintheta * sinphi,
-                                    costheta));
-    *Ns = (Normal)d;
-
-    // Compute origin for infinite light sample ray
-    Point worldCenter;
-    float worldRadius;
-    scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-    Vector v1, v2;
-    CoordinateSystem(-d, &v1, &v2);
-    float d1, d2;
-    ConcentricSampleDisk(u1, u2, &d1, &d2);
-    Point Pdisk = worldCenter + worldRadius * (d1 * v1 + d2 * v2);
-    *ray = Ray(Pdisk + worldRadius * -d, d, 0., INFINITY, time);
-
-    // Compute _InfiniteAreaLight_ ray PDF
-    float directionPdf = mapPdf / (2.f * M_PI * M_PI * sintheta);
-    float areaPdf = 1.f / (M_PI * worldRadius * worldRadius);
-    *pdf = directionPdf * areaPdf;
-    if (sintheta == 0.f) *pdf = 0.f;
-    Spectrum Ls = (radianceMap->Lookup(uv[0], uv[1]), SPECTRUM_ILLUMINANT);
-    PBRT_INFINITE_LIGHT_FINISHED_SAMPLE();
-    return Ls;
+	return Spectrum(0);
 }

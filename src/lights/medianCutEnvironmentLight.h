@@ -13,6 +13,19 @@
 #include "scene.h"
 #include "mipmap.h"
 
+struct virtualLight {
+	float u;
+	float v;
+	Spectrum spectrum;
+	virtualLight() {};
+	virtualLight(float u, float v, Spectrum s) {
+		this->u = u;
+		this->v = v;
+		this->spectrum = s;
+	}
+};
+
+
 // MedianCutEnvironmentLight Declarations
 class MedianCutEnvironmentLight : public Light {
 public:
