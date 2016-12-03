@@ -25,6 +25,34 @@ struct virtualLight {
 	}
 };
 
+struct Area {
+	int minx;
+	int miny;
+	int maxx;
+	int maxy;
+
+	Area() {};
+	Area(int x0, int y0, int x1, int y1) {
+		minx = x0;
+		maxx = x1;
+		miny = y0;
+		maxy = y1;
+	}
+
+	float getEnergy(float SAT[], int width, int height) {
+#define IDX(u, v) ((u)+(v)*width)
+		float e = SAT[IDX(maxx, maxy)];
+		if (minx > 0) e -= SAT[IDX(minx - 1, maxy)];
+		if (miny > 0) e -= SAT[IDX(maxx, miny - 1)];
+		if (miny > 0 && minx > 0) e += SAT[IDX(minx - 1, miny - 1)];
+#undef IDX
+		return e;
+	}
+
+	int getLongestAxis() {
+		return maxx - minx > maxy - miny ? 0 : 1;
+	}
+};
 
 // MedianCutEnvironmentLight Declarations
 class MedianCutEnvironmentLight : public Light {
@@ -44,9 +72,16 @@ public:
     void SHProject(const Point &p, float pEpsilon, int lmax, const Scene *scene,
         bool computeLightVis, float time, RNG &rng, Spectrum *coeffs) const;
 private:
+	void ConstructSAT(const int w, const int h, const float* img, const float solidAngle);
+	void MedianCut(vector<Area>& areas, const int w, const int h, const int partitions);
+	int FindMedianCut(const Area a, const float halfEnergy, const int axis, const int w, const int h);
+
     // MedianCutEnvironmentLight Private Data
     MIPMap<RGBSpectrum> *radianceMap;
     Distribution2D *distribution;
+	vector<virtualLight> lights;
+	float pdf;
+	float* SAT;
 };
 
 

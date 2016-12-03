@@ -36,6 +36,78 @@ MedianCutEnvironmentLight::~MedianCutEnvironmentLight() {
 MedianCutEnvironmentLight::MedianCutEnvironmentLight(const Transform &light2world,
         const Spectrum &L, int ns, const string &texmap)
     : Light(light2world, ns) {
+	int width = 0, height = 0;
+	RGBSpectrum *texels = NULL;
+	// Read texel data from _texmap_ into _texels_
+	if (texmap != "") {
+		texels = ReadImage(texmap, &width, &height);
+		if (texels)
+			for (int i = 0; i < width * height; ++i)
+				texels[i] *= L.ToRGBSpectrum();
+	}
+	if (!texels) {
+		width = height = 1;
+		texels = new RGBSpectrum[1];
+		texels[0] = L.ToRGBSpectrum();
+	}
+	radianceMap = new MIPMap<RGBSpectrum>(width, height, texels);
+	// Initialize sampling PDFs for infinite area light
+
+
+	// Compute scalar-valued image _img_ from environment map
+	float solidAngle = ((2.f * M_PI) / (width - 1)) * ((M_PI) / (height - 1));
+	float filter = 1.f / max(width, height);
+	float *img = new float[width*height];
+	for (int v = 0; v < height; ++v) {
+		float vp = (float)v / (float)height;
+		float sinTheta = sinf(M_PI * float(v + .5f) / float(height));
+		for (int u = 0; u < width; ++u) {
+			float up = (float)u / (float)width;
+			img[u + v*width] = radianceMap->Lookup(up, vp, filter).y();
+			img[u + v*width] *= sinTheta;
+
+			// Scale the light intensity accroding to the areas
+			texels[u + v*width] = texels[u + v*width] * solidAngle * sinTheta;
+		}
+	}
+
+	// Compute SAT
+	ConstructSAT(width, height, img, solidAngle);
+
+
+	// Subdivided into 64 equal energy regions
+	vector<Area> Areas;
+	Areas.push_back(Area(0, 0, width - 1, height - 1));
+	MedianCut(Areas, width, height, 64);
+
+
+	// Put virtual light into each Area's centroid
+	this->pdf = 1.f / Areas.size();
+	for (Area a: Areas) {
+		RGBSpectrum spectrum = RGBSpectrum(0.f);
+		float cv = 0.f;
+		float cu = 0.f;
+		float sumf = 0;
+
+#define IDX(u, v) ((u)+(v)*width)
+		for (int v = a.miny; v <= a.maxy; v++) {
+			for (int u = a.minx; u <= a.maxx; u++) {
+				spectrum += texels[IDX(u, v)];
+				float f = img[IDX(u, v)];
+				cv += v * f;
+				cu += u * f;
+				sumf += f;
+			}
+		}
+#undef IDX
+
+		this->lights.push_back(virtualLight(cu / sumf / height, cv / sumf / width, spectrum));
+	}
+
+	// Compute sampling distributions for rows and columns of image
+	distribution = new Distribution2D(img, width, height);
+	delete[] texels;
+	delete[] img;
 }
 
 
@@ -114,6 +186,81 @@ void MedianCutEnvironmentLight::SHProject(const Point &p, float pEpsilon,
     }
 }
 
+void MedianCutEnvironmentLight::ConstructSAT(const int w, const int h, const float* img, const float solidAngle) {
+	float *sat = new float[w*h];
+
+	for (int u = 0; u < w; u++) {
+		for (int v = 0; v < h; v++) {
+			float currentPixel = img[u + v*w] * solidAngle;
+			if (!u && !v) {
+				sat[0] = currentPixel;
+				continue;
+			}
+			if (u && !v) {
+				sat[u] = sat[u - 1] + currentPixel;
+				continue;
+			}
+			if (!u && v) {
+				sat[v*w] = sat[(v - 1)*w] + currentPixel;
+				continue;
+			}
+
+			sat[u + v*w] =
+				sat[(u - 1) + v*w] +
+				sat[u + (v - 1)*w] -
+				sat[(u - 1) + (v - 1)*w] +
+				currentPixel;
+		}
+	}
+
+	this->SAT = sat;
+}
+
+void MedianCutEnvironmentLight::MedianCut(vector<Area>& areas, const int w, const int h, const int partitions) {
+	for (int it = 0; it < 6 && areas.size() < partitions; it++) {
+		vector<Area> newArea;
+		for (Area a : areas) {
+			float halfE = a.getEnergy(SAT, w, h) * 0.5f;
+
+			int ret = FindMedianCut(a, halfE, a.getLongestAxis(), w, h);
+			if (a.getLongestAxis() == 0) {
+				newArea.push_back(Area(a.minx, a.miny, ret, a.maxy));
+				if (ret + 1 <= a.maxx) {
+					newArea.push_back(Area(ret + 1, a.miny, a.maxx, a.maxy));
+				}
+			} else {
+				newArea.push_back(Area(a.minx, a.miny, a.maxx, ret));
+				if (ret + 1 <= a.maxy) {
+					newArea.push_back(Area(a.minx, ret + 1, a.maxx, a.maxy));
+				}
+			}
+		}
+		areas = newArea;
+	}
+}
+
+int MedianCutEnvironmentLight::FindMedianCut(const Area a, const float halfEnergy, const int axis, const int w, const int h) {
+	int l = axis ? a.miny : a.minx;
+	int r = axis ? a.maxy : a.maxx;
+	int middle;
+	int ret = l;
+
+	while (l <= r) {
+		middle = (l + r) / 2;
+		float energy = axis
+			? Area(a.minx, a.miny, a.maxx, middle).getEnergy(SAT, w, h) 
+			: Area(a.minx, a.miny, middle, a.maxy).getEnergy(SAT, w, h);
+
+		if (energy < halfEnergy) {
+			l = middle + 1;
+			ret = middle;
+		} else {
+			r = middle - 1;
+		}
+	}
+
+	return ret;
+}
 
 MedianCutEnvironmentLight *CreateMedianCutEnvironmentLight(const Transform &light2world,
         const ParamSet &paramSet) {
@@ -130,26 +277,24 @@ Spectrum MedianCutEnvironmentLight::Sample_L(const Point &p, float pEpsilon,
         const LightSample &ls, float time, Vector *wi, float *pdf,
         VisibilityTester *visibility) const {
 	PBRT_INFINITE_LIGHT_STARTED_SAMPLE();
-	// Find $(u,v)$ sample coordinates in infinite light texture
-	float uv[2], mapPdf;
-	distribution->SampleContinuous(ls.uPos[0], ls.uPos[1], uv, &mapPdf);
-	if (mapPdf == 0.f) return 0.f;
+
+	// random select virtual light
+	virtualLight l = lights[Floor2Int(ls.uComponent*lights.size())];
 
 	// Convert infinite light sample point to direction
-	float theta = uv[1] * M_PI, phi = uv[0] * 2.f * M_PI;
+	float theta = l.v * M_PI, phi = l.u * 2.f * M_PI;
 	float costheta = cosf(theta), sintheta = sinf(theta);
 	float sinphi = sinf(phi), cosphi = cosf(phi);
 	*wi = LightToWorld(Vector(sintheta * cosphi, sintheta * sinphi,
 		costheta));
 
 	// Compute PDF for sampled infinite light direction
-	*pdf = mapPdf / (2.f * M_PI * M_PI * sintheta);
+	*pdf = this->pdf;
 	if (sintheta == 0.f) *pdf = 0.f;
 
 	// Return radiance value for infinite light direction
 	visibility->SetRay(p, pEpsilon, *wi, time);
-	Spectrum Ls = Spectrum(radianceMap->Lookup(uv[0], uv[1]),
-		SPECTRUM_ILLUMINANT);
+	Spectrum Ls = Spectrum(l.spectrum, SPECTRUM_ILLUMINANT);
 	PBRT_INFINITE_LIGHT_FINISHED_SAMPLE();
 	return Ls;
 }
