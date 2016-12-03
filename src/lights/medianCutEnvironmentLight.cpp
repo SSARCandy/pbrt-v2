@@ -83,7 +83,8 @@ MedianCutEnvironmentLight::MedianCutEnvironmentLight(const Transform &light2worl
 
 	// Put virtual light into each Area's centroid
 	this->pdf = 1.f / Areas.size();
-	for (Area a: Areas) {
+	for (int i = 0; i < Areas.size(); i++) {
+		Area a = Areas[i];
 		RGBSpectrum spectrum = RGBSpectrum(0.f);
 		float cv = 0.f;
 		float cu = 0.f;
@@ -219,7 +220,8 @@ void MedianCutEnvironmentLight::ConstructSAT(const int w, const int h, const flo
 void MedianCutEnvironmentLight::MedianCut(vector<Area>& areas, const int w, const int h, const int partitions) {
 	for (int it = 0; it < 6 && areas.size() < partitions; it++) {
 		vector<Area> newArea;
-		for (Area a : areas) {
+		for (int i = 0; i < areas.size(); i++) {
+			Area a = areas[i];
 			float halfE = a.getEnergy(SAT, w, h) * 0.5f;
 
 			int ret = FindMedianCut(a, halfE, a.getLongestAxis(), w, h);
