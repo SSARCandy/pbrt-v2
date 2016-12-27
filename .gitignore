@@ -33,3 +33,4 @@ src/pbrt.vs*/*.exr
 tmp/
 bin/
 lib/
+*.DS_Store

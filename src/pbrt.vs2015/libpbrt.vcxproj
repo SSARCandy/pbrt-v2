@@ -231,6 +231,7 @@
     <ClInclude Include="..\lights\distant.h" />
     <ClInclude Include="..\lights\goniometric.h" />
     <ClInclude Include="..\lights\infinite.h" />
+    <ClInclude Include="..\lights\medianCutEnvironmentLight.h" />
     <ClInclude Include="..\lights\point.h" />
     <ClInclude Include="..\lights\projection.h" />
     <ClInclude Include="..\lights\spot.h" />
@@ -1195,6 +1196,7 @@
     <ClCompile Include="..\lights\distant.cpp" />
     <ClCompile Include="..\lights\goniometric.cpp" />
     <ClCompile Include="..\lights\infinite.cpp" />
+    <ClCompile Include="..\lights\medianCutEnvironmentLight.cpp" />
     <ClCompile Include="..\lights\point.cpp" />
     <ClCompile Include="..\lights\projection.cpp" />
     <ClCompile Include="..\lights\spot.cpp" />
