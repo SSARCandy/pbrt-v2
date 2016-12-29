@@ -924,6 +924,9 @@
     <ClInclude Include="..\lights\medianCutEnvironmentLight.h">
       <Filter>Header Files\lights</Filter>
     </ClInclude>
+    <ClInclude Include="..\cameras\lightfield.h">
+      <Filter>Header Files\cameras</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\3rdparty\ilmbase-1.0.2\half.cpp">
@@ -1702,6 +1705,9 @@
     </ClCompile>
     <ClCompile Include="..\lights\medianCutEnvironmentLight.cpp">
       <Filter>Source Files\lights</Filter>
+    </ClCompile>
+    <ClCompile Include="..\cameras\lightfield.cpp">
+      <Filter>Source Files\cameras</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

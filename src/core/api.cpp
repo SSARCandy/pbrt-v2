@@ -50,6 +50,7 @@
 #include "cameras/orthographic.h"
 #include "cameras/perspective.h"
 #include "cameras/realistic.h"
+#include "cameras/lightfield.h"
 #include "film/image.h"
 #include "filters/box.h"
 #include "filters/gaussian.h"
@@ -621,6 +622,8 @@ Camera *MakeCamera(const string &name,
 		camera = CreateEnvironmentCamera(paramSet, animatedCam2World, film);
 	else if (name == "realistic")
 		camera = CreateRealisticCamera(paramSet, animatedCam2World, film);
+	else if (name == "lightfield")
+		camera = CreateLFCamera(paramSet, animatedCam2World, film);
 	else
         Warning("Camera \"%s\" unknown.", name.c_str());
     paramSet.ReportUnused();
