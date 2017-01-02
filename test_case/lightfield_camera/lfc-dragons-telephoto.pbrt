@@ -1,4 +1,4 @@
-Film "image"  "integer xresolution" [120] "integer yresolution" [120] "string filename" ["lfc-dragons.dgauss.exr" ] 
+Film "image"  "integer xresolution" [1200] "integer yresolution" [1200] "string filename" ["lfc-dragons.dgauss.exr" ] 
 
 
 # For high quality images, use 128 or 512 samples

@@ -15,7 +15,7 @@ Translate -2.3 -.05 .5
 #
 Camera "lightfield"
     "string specfile" "dgauss.50mm.dat"
-    "string lensletSpec" "lenslets-dguass.txt"
+    "string lensletSpec" "lenslets-dgauss.txt"
     "float lensletDistance" 36.07985
     "float aperture_diameter" 17.1
     "float filmdiag" 70
