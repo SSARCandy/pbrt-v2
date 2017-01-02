@@ -1,4 +1,4 @@
-Film "image"  "integer xresolution" [1200] "integer yresolution" [1200] "string filename" ["lfc-dragons.dgauss.exr" ] 
+Film "image"  "integer xresolution" [120] "integer yresolution" [120] "string filename" ["lfc-dragons.dgauss.exr" ] 
 
 
 # For high quality images, use 128 or 512 samples
@@ -14,10 +14,10 @@ Translate -2.3 -.05 .5
 # Your implementation of a realistic lens system
 #
 Camera "lightfield"
-    "string specfile" "dgauss.50mm.dat"
-    "string lensletSpec" "lenslets-dguass.txt"
-    "float lensletDistance" 36.07985
-    "float aperture_diameter" 17.1
+    "string specfile" "telephoto.250mm.dat"
+    "string lensletSpec" "lenslets-telephoto.txt"
+    "float lensletDistance" 123.74390
+    "float aperture_diameter" 40.5
     "float filmdiag" 70
     "float hither" [0.001 ]
     "float yon" [1e+30 ]

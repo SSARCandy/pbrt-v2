@@ -1,5 +1,5 @@
 
-lensesX 150
+lensesX 150 // Num lenses in x direction
 lensesY 150
 fNumber 2.0 // fNumber of lenslets
 filmdiag        70.0

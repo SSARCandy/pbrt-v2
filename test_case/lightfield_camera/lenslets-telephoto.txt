@@ -1,0 +1,10 @@
+
+lensesX 150 // Num lenses in x direction
+lensesY 150
+fNumber 2.0 // fNumber of lenslets
+filmdiag        70.0
+xRes    1200 // resolution of original light-field image
+yRes    1200
+lensletDistance 123.74390 // distance from back of main lens to lenslet grid
+apertureDiameter        40.5 // aperture of the main lens
+backMainLensAperture    37 // back lens of the main lens system
