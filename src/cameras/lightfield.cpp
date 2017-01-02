@@ -195,54 +195,53 @@ static vector<SurfaceSpec> buildLensSpec(const string &specfile) {
 }
 
 LensletStruct buildLensletArray(const string &lensletSpec) {
-    fprintf(stderr,"Building lensletArray with spec %s\n",lensletSpec.c_str());
-    LensletStruct lensletArray;
-    const char *lensletSpecFilename = lensletSpec.c_str();
-    ifstream mylensletspecfile (lensletSpecFilename);
-    string line;
-    if (mylensletspecfile.is_open()) {
-        while (mylensletspecfile.good()) {
-            getline (mylensletspecfile,line);
-            char *linechars = new char [line.length()+1];
-            strcpy(linechars,line.c_str());
-            if (strcmp(linechars,"") != 0) {
-                char *firsttoken = strtok(linechars," ");
-                char *secondtoken = strtok(NULL," ");
-                float value = atof(secondtoken);
-                if (strcmp(firsttoken,"lensesX") == 0) {
-                    lensletArray.lensesX = int(value);
-                } else if (strcmp(firsttoken,"lensesY") == 0) {
-                    lensletArray.lensesY = int(value);
-                } else if (strcmp(firsttoken,"fNumber") == 0) {
-                    lensletArray.fNumber = value;
-                } else if (strcmp(firsttoken,"filmdiag") == 0) {
-                    lensletArray.filmdiag = value;
-                } else if (strcmp(firsttoken,"xRes") == 0) {
-                    lensletArray.xRes = int(value);
-                } else if (strcmp(firsttoken,"yRes") == 0) {
-                    lensletArray.yRes = int(value);
-                } else if (strcmp(firsttoken,"lensletDistance") == 0) {
-                    lensletArray.lensletDistance = value;
-                } else if (strcmp(firsttoken,"apertureDiameter") == 0) {
-                    lensletArray.apertureDiameter = value;
-                }
-            }
-        }
-        mylensletspecfile.close();
-    }
-    
-    assert (lensletArray.lensesX == lensletArray.lensesY);
-    
-    
-    float filmx = sqrt(pow(lensletArray.filmdiag,2)/(1+float(lensletArray.yRes)/lensletArray.xRes));
-    lensletArray.lensletWidth = filmx / lensletArray.lensesX;
-    lensletArray.focalLength = lensletArray.lensletWidth * lensletArray.fNumber;
-    
-    fprintf(stderr,"Calculated focalLength as %f\n",lensletArray.focalLength);
-    
-    
-    
-    return lensletArray;
+	fprintf(stderr, "Building lensletArray with spec %s\n", lensletSpec.c_str());
+	LensletStruct lensletArray;
+
+
+	string line;
+	ifstream fin(lensletSpec.c_str());
+	if (fin.fail()) perror("open failed ");
+
+	while (getline(fin, line)) {
+		if (line[0] == '#') continue;
+
+		char key[30] = { '\0' };
+		int value;
+		sscanf(line.c_str(), "%s %d \n", key, &value);
+
+		if (strcmp(key, "lensesX") == 0) {
+			lensletArray.lensesX = int(value);
+		} else if (strcmp(key, "lensesY") == 0) {
+			lensletArray.lensesY = int(value);
+		} else if (strcmp(key, "fNumber") == 0) {
+			lensletArray.fNumber = value;
+		} else if (strcmp(key, "filmdiag") == 0) {
+			lensletArray.filmdiag = value;
+		} else if (strcmp(key, "xRes") == 0) {
+			lensletArray.xRes = int(value);
+		} else if (strcmp(key, "yRes") == 0) {
+			lensletArray.yRes = int(value);
+		} else if (strcmp(key, "lensletDistance") == 0) {
+			lensletArray.lensletDistance = value;
+		} else if (strcmp(key, "apertureDiameter") == 0) {
+			lensletArray.apertureDiameter = value;
+		}
+	}
+
+	fin.close();
+
+
+	assert(lensletArray.lensesX == lensletArray.lensesY);
+
+
+	float filmx = sqrt(pow(lensletArray.filmdiag, 2) / (1 + float(lensletArray.yRes) / lensletArray.xRes));
+	lensletArray.lensletWidth = filmx / lensletArray.lensesX;
+	lensletArray.focalLength = lensletArray.lensletWidth * lensletArray.fNumber;
+
+	fprintf(stderr, "Calculated focalLength as %f\n", lensletArray.focalLength);
+
+	return lensletArray;
 }
 
 
