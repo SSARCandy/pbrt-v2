@@ -212,6 +212,7 @@ void ImageFilm::WriteImage(float splatScale) {
     delete[] rgb;
 }
 
+
 void ImageFilm::UpdateDisplay(int x0, int y0, int x1, int y1,
     float splatScale) {
 }
