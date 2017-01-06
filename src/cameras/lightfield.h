@@ -10,27 +10,25 @@
 #include "film.h"
 
 struct SurfaceSpec {
-    float radius;
-    float thickness;
-    float n;
-    float aperture;
-    float z_pos; // The z position of the image-side of the element's center
+    float radius;    // Radius of lens sphere
+    float thickness; // Thickness of lens
+    float n;         // Index of refraction corresponding the current lens element.
+    float aperture;  // Diameter of the lens element for the current interface definition.
+    float z_pos;     // The z position of the image-side of the element's center
 };
 
 struct LensletStruct {
-    int lensesX; //The number of lenses in x direction.  e.g. 296
-    int lensesY;
-    float lensletWidth; //in mm
-    float focalLength; // in mm
-    float fNumber;  // Should simply be focalLength/lensletWidth
+    int lensesX;        // The number of lenses in x direction.
+    int lensesY;        // The number of lenses in y direction.
+    float lensletWidth; // in mm
+    float focalLength;  // in mm
+    float fNumber;      // Should be focalLength/lensletWidth
     
-    //extra stuff
     float filmdiag;
     int xRes;
     int yRes;
     float lensletDistance;
     float apertureDiameter;
-    
 };
 
 
@@ -41,28 +39,25 @@ public:
 		float sclose, float lensletDistance, float aperture_diameter,
 		const string &specfile,
 		const string &lensletSpec,
-		const string &autofocusfile,
 		float filmdiag,
 		Film *film);
 	~LFCamera();
 	float GenerateRay(const CameraSample &sample, Ray *) const;
-	bool surfaceIntercept(SurfaceSpec ss, Ray r, DifferentialGeometry &dg) const;
+	bool SurfaceIntercept(SurfaceSpec ss, Ray r, DifferentialGeometry &dg) const;
 	LensletStruct lensletArray;
 	float stored_back_lens_a;
-	float calculatePrincipalPlane();
 
 private:
-	bool  autofocus;
 	float ShutterOpen;
 	float ShutterClose;
 	Film * film;
 
 	vector<SurfaceSpec> lensSpec;
-	float mylensletdistance;
-	float myaperture_diameter;
-	float myfilmdiag;
-	float myfilmy;
-	float myfilmx;
+	float lensletdistance;
+	float aperture_diameter;
+	float filmdiag;
+	float filmy;
+	float filmx;
 	int failures;
 	int successes;
 };
