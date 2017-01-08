@@ -8,7 +8,7 @@ Sampler "lowdiscrepancy" "integer pixelsamples" [512] # for final: [512]
 Scale 5000 5000 5000
 Rotate -3 1 0 0
 Rotate 52 0 1 0
-Translate -2.3 -.05 .5
+Translate -2.3 -.08 .5
 
 
 # Your implementation of a realistic lens system
@@ -47,9 +47,9 @@ Material "matte" "color Kd" [ .2 .2 .5 ]
 Translate -.01 0 0
 Rotate -10 0 1 0
 Translate .01 0 0
-#Include "geometry/dragon.pbrt"
+Include "../../scenes/dragon.pbrt"
 Rotate -90 1 0 0 
-Shape "cone" "float height" 0.15 "float radius" 0.05 "float phimax" 360
+#Shape "cone" "float height" 0.15 "float radius" 0.05 "float phimax" 360
 ObjectEnd
 
 ObjectBegin "dragon-a"
@@ -58,12 +58,12 @@ Material "matte" "color Kd" [ .8 .2 .2 ]
 Translate -.01 0 0
 Rotate -17 0 1 0
 Translate .01 0 0
-#Include "geometry/dragon.pbrt"
+Include "../../scenes/dragon.pbrt"
 Rotate -90 1 0 0
-Shape "cone" "float height" 0.15 "float radius" 0.05 "float phimax" 360
+#Shape "cone" "float height" 0.15 "float radius" 0.05 "float phimax" 360
 ObjectEnd
 
-Translate -.6 0 0 
+Translate -.6 0 -.25 
 ObjectInstance "dragon-b"
 
 Translate .26 0 0 
